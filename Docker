@@ -1,0 +1,9 @@
+# build an image from a different Dockerfile
+docker build -f {DOCKERFILE_NAME} -t {NAME}:{TAG}  .
+
+#Ejecutar imagen
+docker run -it --rm {NAME}:{TAG}  /bin/bash
+
+#para AWS
+docker tag {NAME}:{TAG} id_cuenta.dkr.ecr.us-east-1.amazonaws.com/{REPO}/{NAME}:{TAG}# taguea la imagen
+docker push id_cuenta.dkr.ecr.us-east-1.amazonaws.com/{REPO}/{NAME}:{TAG} #

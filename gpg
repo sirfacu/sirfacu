@@ -1,0 +1,29 @@
+
+# Crear llave GPG
+gpg --batch --full-generate-key <<EOF
+%no-protection
+Key-Type: RSA
+Key-Length: 2048
+Subkey-Type: RSA
+Subkey-Length: 2048
+Name-Real: ubits-sops
+Name-Email: ubits-sops@ubits.com
+Expire-Date: 0
+%commit
+EOF
+
+#eliminar llave GPG:
+gpg --delete-key [fingerprint de la llave a borrar]
+gpg --delete-secret-key [fingerprint de la llave a borrar]
+
+#exportar llave
+gpg --export -a uid_llave > my-public-key.key
+gpg --export-secret-key -a uid > my-private-key.key
+
+#importar llave
+gpg --import my-public-key.key
+gpg --import my-private-key.key
+
+
+#listar el FP (fingerprint)
+gpg --list-keys "ubits-sops@ubits.co" | grep pub -A 1 | grep -v pub
