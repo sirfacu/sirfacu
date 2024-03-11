@@ -1,0 +1,23 @@
+infrastructure-poc@ubits.co
+Spearman-Nurture5-Underuse
+
+#crear token el pulumi cloud
+
+#login pulumi login
+pulumi login
+
+#pulumi whoami saber la cuenta
+
+# Nombre del stack(ambiente/workspace) es como el del ambiente
+
+# El pulumi.squad-env.yaml --> definie credenciales de configuraciones para correr el stack en el ambiente
+
+# La sección environments el lo pone variables de ambiente para ejecutar el tiene las credenciales
+
+# pulumi stack init organization/nombre_stack/ambiente --> crear un nuevo stack una vez se ejecuta
+
+pulumi stack ls
+pulumi stack rm nombre_stack
+pulumi stack select nombre_stack
+
+

@@ -1,0 +1,17 @@
+--- validar que usuarios hayan sido creados y que la password les pida cambio en primer login
+select Host, User, password_expired , password_last_changed  from mysql.user
+where `User` in ( 'kdromero', 'cmejia','frvargas','jsmoreno','juanh','cvarango')
+
+ALTER USER 'kdromero'@'%' PASSWORD EXPIRE;
+ALTER USER 'cmejia'@'%' PASSWORD EXPIRE;
+ALTER USER 'frvargas'@'%' PASSWORD EXPIRE;
+ALTER USER 'jsmoreno'@'%' PASSWORD EXPIRE;
+ALTER USER 'juanh'@'%' PASSWORD EXPIRE;
+ALTER USER 'cvarango'@'%' PASSWORD EXPIRE;
+
+ALTER USER 'frvargas'@'%' IDENTIFIED BY 't3mPo123%*';
+ALTER USER 'jsmoreno'@'%' IDENTIFIED BY 't3mPo123%*';
+ALTER USER 'juanh'@'%' IDENTIFIED BY 't3mPo123%*';
+ALTER USER 'cvarango'@'%' IDENTIFIED BY 't3mPo123%*';
+ALTER USER 'kdromero'@'%' IDENTIFIED BY 't3mPo123%*';
+ALTER USER 'cmejia'@'%' IDENTIFIED BY 't3mPo123%*';
