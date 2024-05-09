@@ -1,0 +1,14 @@
+aws rds describe-db-engine-versions --engine mysql para ver si se pueden aplicar cambios sin reiniciar yo use en este caso el valor de SupportsCertificateRotationWithoutRestart
+
+
+comandos agnte cloudwatch
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a  status
+
+
+# Descargar log de migración cuando cambio la version del motor y no es posible saliendo la excepción
+#  Database cluster is in a state that cannot be upgraded: Upgrade prechecks failed. For more details, see the upgrade-prechecks.log file. For more information on troubleshooting the cause 
+#  of the upgrade failure, see https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.mysql80-upgrade-procedure.html#AuroraMySQL.mysql80-upgrade-troubleshooting.
+aws rds download-db-log-file-portion --db-instance-identifier manual-rds-restore-test-update --log-file-name upgrade-prechecks.log --starting-token 0 --output text > upgrade-prechecks.log
+
+#Crear conexion vpn clasica con GCP
+https://www.linkedin.com/pulse/site-to-site-vpn-between-gcp-aws-cloud-aslam-chandio
