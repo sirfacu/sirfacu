@@ -231,14 +231,12 @@ where `User` in (  'user_users-sync' )
 
 
 
-UPDATE mysql_users SET password='*C5386E368F9719F26A3764FED7156C5C5FB54C13' WHERE username= 'user_users-sync';
+UPDATE mysql_users SET password='*24638A82EFAD31B2783FA10870DD87DE5D6D4F72' WHERE username= 'user_users_sync';
 
-{ username = "user_users-sync" , password = "*C5386E368F9719F26A3764FED7156C5C5FB54C13" , default_hostgroup = 0 , active = 1, max_connections=500 }
-
-
+{ username = "user_users-sync" , password = "*24638A82EFAD31B2783FA10870DD87DE5D6D4F72" , default_hostgroup = 0 , active = 1, max_connections=500 }
 
 
-
+INSERT INTO mysql_users(username,default_hostgroup, password, default_schema , max_connections) VALUES ('user_users_sync',0,'*24638A82EFAD31B2783FA10870DD87DE5D6D4F72', '', 500);
 
 
 
@@ -246,6 +244,9 @@ UPDATE mysql_users SET password='*C5386E368F9719F26A3764FED7156C5C5FB54C13' WHER
 
 
 
+
+GRANT DELETE ON adminhr.* TO 'user_goals'@'%';
+GRANT DELETE ON goals.* TO 'user_goals'@'%';
 
 
 
