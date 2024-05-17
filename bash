@@ -24,10 +24,10 @@ host: ubits-prod-xlearning-cluster.cluster-c9maghmfm0zw.us-east-1.rds.amazonaws.
 
 #reemplazo del swagger  variables en minusculas a mayusculas
 while IFS= read -r line; do
-              key=$(echo "$line" | awk -F'><' '{print $1}')
-              key_uppercase=$(echo "$key" | tr '[:lower:]' '[:upper:]')
-              sed -i "s/{$key}/{$key_uppercase}/g" infrastructure/swagger/templates/private-api-template.json
-            done < keys_json 
+  key=$(echo "$line" | awk -F'><' '{print $1}')
+  key_uppercase=$(echo "$key" | tr '[:lower:]' '[:upper:]')
+  sed -i "s/{$key}/{$key_uppercase}/g" infrastructure/swagger/templates/private-api-template.json
+done < keys_json 
 #validar coindencias
 sum=0
               while IFS= read -r line

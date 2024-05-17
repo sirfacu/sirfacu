@@ -302,8 +302,10 @@ FLUSH PRIVILEGES;
 
 
 
-GRANT ALTER ON adminhr.* TO 'user_goals'@'%';
-GRANT ALTER ON goals.* TO 'user_goals'@'%';
+GRANT ALTER ON goals.user_has_cycle TO 'user_goals'@'%';
+
+
+GRANT DELETE ON goals.user_has_cycle TO 'user_goals'@'%';
 
 
 
