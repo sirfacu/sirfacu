@@ -16,7 +16,7 @@ export V_KEY_NAME=preprod.keystore
 export V_SALT=xfvs5673
 echo "Estableciendo datos de conexion jboss"
 export JBOSS_DC_IP=localhost
-export JBOSS_DC_PORT=9990
+export JBOSS_DC_PORT=9991
 SCRIPT_INICIO=$(date +%s)
 #CREACION DE LA LLAVE
 $JAVA_HOME/bin/keytool -genseckey -alias ${V_ALIAS} \
@@ -38,32 +38,27 @@ fi
 sleep 3
 #Crear credenciales
 #JBOSS 7
+> usuarios
+> secret-value
 for profile in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command='ls profile'); do 
-    for datasource in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="ls /profile=$profiles/subsystem=datasources/data-source") ; do
+    for datasource in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="ls /profile=$profile/subsystem=datasources/data-source") ; do
         echo "Procesando perfil: "$profile " revisando datasource " $datasource;
-        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=user-name)" | grep result | sed 's/"//g' | awk '{print "usuario:" $3}' > usuario;
-        user=$(cat usuario);
-        echo -e "${CYAN}USUARIO ${user}";
-        sleep 1
-        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=password)" | grep result | sed 's/"//g' | awk '{print "password:" $3}') > secret-value;
-        secret-value=$(cat secret-value);
-        echo -e "${CYAN}USUARIO ${secret-value}";
+        usuario=$($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=user-name)" | grep result | sed 's/"//g' | awk '{print $3}');
+        secret-value=$($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=password)" | grep result | sed 's/"//g' | awk '{print $3}') ;
         sleep 1
         $JBOSS_HOME/bin/vault.sh --keystore ${JBOSS_HOME}/${V_FOLDER}/${V_KEY_NAME} \
             --keystore-password ${V_PASSWORD} \
             --alias ${V_ALIAS} \
             --vault-block ${profile,,}-${datasource}\
-            --attribute ${profile,,}-${datasource}-${user} \
+            --attribute ${profile,,}-${datasource}-${usuario} \
             --sec-attr ${secret-value} \
             --enc-dir $JBOSS_HOME/${V_FOLDER}/ \
             --iteration 30 \
             --salt ${V_SALT}
-
         if [ $? -eq 0 ]; then
             echo -e "${CYAN} La encriptación para el datasource: ${datasource} fue correcta ${RESET}"
         else
             echo -e "${AMARILLO} La encriptación para el datasource:${RESET}${ROJO} ${datasource^^} NO ${RESET}${AMARILLO} fue correcta ${RESET}"
-            exit 1
         fi
     done
 done
@@ -71,10 +66,10 @@ done
 echo "Extracción datos del servidor "$JBOSS_DC_IP
 
 for profile in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command='ls profile'); do 
-    for datasource in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="ls /profile=$profiles/subsystem=datasources/data-source") ; do
+    for datasource in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="ls /profile=$profile/subsystem=datasources/data-source") ; do
         echo "Procesando perfil: "$profile " revisando datasource " $datasource;
-        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=user-name)" | grep result | sed 's/"//g' | awk '{print "usuario:" $3}' >> $profile.log;
-        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=password)" | grep result | sed 's/"//g' | awk '{print "password:" $3}' >> $profile.log;
+        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=user-name)" | grep result | sed 's/"//g' | awk '{print "usuario:" $3}';
+        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=password)" | grep result | sed 's/"//g' | awk '{print "password:" $3}';
     done
 done
 
@@ -99,12 +94,16 @@ $JBOSS_HOME/bin/vault.sh --keystore ${JBOSS_HOME}/${V_FOLDER}/${V_KEY_NAME} \
             --enc-dir $JBOSS_HOME/${V_FOLDER}/ \
             --iteration 30 \
             --salt ${V_SALT} > texto_salida
-vault_def=$(cat texto_salida | grep -A7 "<vault>" | sed "s/<management> ...//g")
+V_PASSWORD_ENC=$(cat texto_salida | grep -A7 "<vault>" | grep "MASK-" | awk -F 'value="' '{print $2}' | awk -F '"' '{print $1}')
 
 
-/core-service=vault:add(vault-options=[("KEYSTORE_URL" => "EAP_HOME/vault/vault.keystore"), ("KEYSTORE_PASSWORD" => "MASK-5dOaAVafCSd"), ("KEYSTORE_ALIAS" => "vault"), ("SALT" => "1234abcd"),("ITERATION_COUNT" => "120"), ("ENC_FILE_DIR" => "EAP_HOME/vault/")])
 
-echo "Actualizando configuración"
+
+#actualizando el archivo de configuracion
+echo -e "${ROJO}Actualizando configuración${RESET}"
+#sed -i "/<\/extensions>/r /dev/stdin" "host-master.xml" <<< "$vault_data"
+export command_jb="/host=master/core-service=vault:add(vault-options=[(\"KEYSTORE_URL\" => \"${JBOSS_HOME}/${V_FOLDER}/${V_KEY_NAME}\"),(\"KEYSTORE_PASSWORD\" => \"${V_PASSWORD_ENC}\"),(\"KEYSTORE_ALIAS\" => \"${V_ALIAS}\"),(\"SALT\" => \"${V_SALT}\"),(\"ITERATION_COUNT\" => \"${V_ITERATION}\"),(\"ENC_FILE_DIR\" => \"$JBOSS_HOME/$V_FOLDER/\")])"
+$JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="${command_jb}"
 
 SCRIPT_INICIO=$(date +%s)
 SCRIPT_FIN=$(date +%s)
