@@ -42,3 +42,14 @@ sum=0
 
 https://access.redhat.com/labs/jvmconfig
 https://access.redhat.com/labs/jvmconfig/
+
+
+
+#crear definicion de threads a eliminar
+mysql -u admin -padmin -h 127.0.0.1 -P 6032 -e "SHOW PROCESSLIST" | grep  "user_orgchart"| awk '{print "KILL CONNECTION " $1";"}' > script_kill_user
+#conteo de conexiones
+mysql -u admin -padmin -h 127.0.0.1 -P 6032 -e "SHOW PROCESSLIST" | grep  "user_orgchart"| wc -l
+#ejecucion 
+mysql -u admin -padmin -h 127.0.0.1 -P 6032 < script_kill_user
+
+#
