@@ -1,18 +1,13 @@
-create database `360_assessments` /*!40100 DEFAULT CHARACTER SET utf8 */;
+CREATE DATABASE`360_assessments` /*!40100 DEFAULT CHARACTER SET utf8 */;
 
-select * from mysql.user
-where `User` in ( 'edelgado')#, 'cmejia','frvargas','jsmoreno','juanh','cvarango') #talent
+SELECT * from mysql.user where `User` in ( 'edelgado')#, 'cmejia','frvargas','jsmoreno','juanh','cvarango') #talent
 
-
-
-select a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked  
-from mysql.user as a
-where `User` in ( 'edelgado'), 'mpedraza','jmontenegro','ofguerrero','jorgem','egarcia', 'jlopez') #core
+SELECT a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user as a where `User` in ( 'edelgado'), 'mpedraza','jmontenegro','ofguerrero','jorgem','egarcia', 'jlopez') #core
 
 CREATE USER '4ckamilo'@'%' IDENTIFIED BY 't3mp0123%*' PASSWORD EXPIRE ;
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER ON PLATZIBLOG.* TO '4ckamilo'@'%';
 
-drop user 'user_360_assessments';
+DROP USER 'user_360_assessments';
 CREATE USER 'user_360_assessments'@'%' IDENTIFIED BY '3604pPU$3r%*';
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER ON 360_assessments.* TO 'user_360_assessments'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON adminhr.* TO 'user_360_assessments'@'%';
@@ -29,26 +24,21 @@ CREATE USER 'jorgem'@'%' IDENTIFIED BY 't3mp0123%*' PASSWORD EXPIRE ;
 GRANT SELECT, INSERT, UPDATE, DELETE ON bitnami_moodle.* TO 'jorgem'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON adminhr.* TO 'jorgem'@'%';
 
-
 CREATE USER 'egarcia'@'%' IDENTIFIED BY 't3mp0123%*' PASSWORD EXPIRE ;
 GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON bitnami_moodle.* TO 'egarcia'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON adminhr.* TO 'egarcia'@'%';
 
-
 CREATE USER 'jlopez'@'%' IDENTIFIED BY 't3mp0123%*' PASSWORD EXPIRE ;
 GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON bitnami_moodle.* TO 'jlopez'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON adminhr.* TO 'jlopez'@'%';
-FLUSH PRIVILEGES;
 
-drop user 'wmosquera'@'%';
-drop user 'mpedraza'@'%';
-drop user 'jmontenegro'@'%';
-drop user 'ofguerrero'@'%';
-drop user 'jorgem'@'%';
-drop user 'egarcia'@'%';
-drop user 'jlopez'@'%';
-
-
+DROP USER 'wmosquera'@'%';
+DROP USER 'mpedraza'@'%';
+DROP USER 'jmontenegro'@'%';
+DROP USER 'ofguerrero'@'%';
+DROP USER 'jorgem'@'%';
+DROP USER 'egarcia'@'%';
+DROP USER 'jlopez'@'%';
 
 SELECT * FROM information_schema.USER_PRIVILEGES
 WHERE GRANTEE like '%wmosquera%'
@@ -59,23 +49,11 @@ or GRANTEE like '%jorgem%'
 or GRANTEE like '%egarcia%'
 or GRANTEE like '%jlopez%'
 
+DROP USER 'user_intranalytics'@'%';
 
-
-
-drop user 'user_intranalytics'@'%';
-
-
-select * from mysql.user as a where `User` like '%analytics%' 
-
-
-select  a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user as a where `User` like '%analytics%' 
-in ( 'mcerpa', 'andrescramirez','laguilar','vjuspian','jpolanco','mrodriguez', 'user_intranalytics') #core
-
-select  a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user as a where `User` 
-in ( 'juhoyos', 'jsmoreno','scbustos','cmejia','bssaldarriaga','crrincon', 'juanh') #talent
-
-juhoyos,bssaldarriaga
-
+SELECT * from mysql.user as a where `User` like '%analytics%' 
+SELECT  a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user as a WHERE `User` like '%analytics%' IN ( 'mcerpa', 'andrescramirez','laguilar','vjuspian','jpolanco','mrodriguez', 'user_intranalytics') #core
+SELECT  a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user as a WHERE `User` IN ( 'juhoyos', 'jsmoreno','scbustos','cmejia','bssaldarriaga','crrincon', 'juanh') #talent
 
 CREATE USER 'jpolanco'@'%' IDENTIFIED BY 'Ub1T$D3v2024%*';
 CREATE USER 'user_intranalytics_pipe'@'%' IDENTIFIED BY '4pPU$3rD3v2024%*';
@@ -89,9 +67,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON adminhr.* TO 'user_intranalytics_pipe'@'
 GRANT SELECT, INSERT, UPDATE, DELETE ON bitnami_moodle.* TO 'user_intranalytics_pipe'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON talentdb.* TO 'user_intranalytics_pipe'@'%';
 
-
-
-
 ---- MONGO -----
 
 db.createUser({user: 'mcerpa' , pwd: 'Ub1T$2024%*' , roles:[{role: 'readWrite', db: 'centralization'}]});
@@ -102,7 +77,7 @@ db.createUser({user: 'vjuspian' , pwd: 'Ub1T$2024%*' , roles:[{role: 'readWrite'
 db.createUser({user: 'mrodriguez' , pwd: 'Ub1T$2024%*' , roles:[{role: 'readWrite', db: 'centralization'}]});
 db.createUser({user: 'user_developer' , pwd: 'Ub1T$2024%*' , roles:[{role: 'read', db: 'centralization'}]});
 
-drop user 'vjuspian'@'%';
+DROP USER 'vjuspian'@'%';
 CREATE USER 'vjuspian'@'%' IDENTIFIED BY 'VdNdxM99)lqVbjen';
 GRANT SELECT, INSERT, UPDATE ON learning_hub.* TO 'vjuspian'@'%';
 GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'vjuspian'@'%';
@@ -115,11 +90,7 @@ GRANT SELECT, INSERT, UPDATE ON bitnami_moodle.* TO 'vjuspian'@'%';
 #PTT-25
 CREATE DATABASE `goals` /*!40100 DEFAULT CHARACTER SET utf8 */;
 
-select  a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user as a where `User` 
-in ( 'juhoyos', 'jsmoreno','scbustos','cmejia','bssaldarriaga','crrincon', 'juanh') #talent
-
-juhoyos,bssaldarriaga
-
+SELECT a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user as a where `User` in ( 'juhoyos', 'jsmoreno','scbustos','cmejia','bssaldarriaga','crrincon', 'juanh'); #talent
 
 CREATE USER 'juhoyos'@'%' IDENTIFIED BY 'Ub1T$2024%*';
 CREATE USER 'user_goalsapp'@'%' IDENTIFIED BY 'Ub1T$D3v2024%*';
@@ -133,28 +104,24 @@ GRANT SELECT, INSERT, UPDATE ON goals.* TO 'bssaldarriaga'@'%';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'crrincon'@'%';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'juanh'@'%';
 
-drop user 'juhoyos'@'%'
+DROP USER 'juhoyos'@'%'
 CREATE USER 'juhoyos'@'%' IDENTIFIED BY 'Ub1T$2024%*';
 GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'juhoyos'@'%';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'juhoyos'@'%';
 
+SELECT a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user; 
 
-select  a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked from mysql.user 
+DROP USER 'user_goals'@'%';
 
-
-
-drop user 'user_goalsapp'@'%'
-
-CREATE USER 'user_goalsapp'@'%' IDENTIFIED BY 'Ub1T$D3v2024%*';
+CREATE USER 'user_goals'@'%' IDENTIFIED BY 'Ub1T$D3v2024%*';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'user_goalsapp'@'%';
 GRANT SELECT ON adminhr.* TO 'user_goalsapp'@'%';
-ALTER USER 'user_goalsapp'@'%' IDENTIFIED BY  'Ub1T$D3v2024%*'
+GRANT DROP ON goals.* TO 'user_goalsapp'@'%';
+GRANT DROP ON goals.* TO 'juhoyos'@'%';
 
 GRANT CREATE,REFERENCES on goals.* TO 'user_goals'@'%';
 
-
-
-drop user 'edelgado'@'%'
+DROP USER 'edelgado'@'%'
 CREATE USER 'edelgado'@'%' IDENTIFIED BY 'Ub1T$D3v2024%*';
 GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON 360_assessments.* TO 'edelgado'@'%';
 GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON adminhr.* TO 'edelgado'@'%';
@@ -163,32 +130,32 @@ GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON goals.* TO 'edelgado'@'%';
 GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON learning_hub.* TO 'edelgado'@'%';
 GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON learning_map_dev.* TO 'edelgado'@'%';
 
-ALTER USER 'edelgado'@'%' IDENTIFIED BY  'Ub1T$2024%*'
+ALTER USER 'edelgado'@'%' IDENTIFIED BY  'Ub1T$2024%*';
 
-
-
-
-e5mHY156H\u0026E3JmL
+## e5mHY156H\u0026E3JmL
 ------ PC-458
 
 ALTER USER 'user_users_sync'@'%' IDENTIFIED BY 'e5mHY156H&E3IwK';
-select `User` , authentication_string   from mysql.user where `User` in (  'user_users_sync' );
+SELECT `User` , authentication_string   from mysql.user where `User` in (  'user_users_sync' );
 GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON adminhr.* TO 'user_users_sync'@'%';
 GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON bitnami_moodle.* TO 'user_users_sync'@'%';
 
-
-
 ------------
+-- para mysql 
+
+CREATE USER 'user_auth0'@'%' IDENTIFIED BY 'GK>>qGDLRem1VKyocujVLK0';
+GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'user_users_auth0'@'%';
+
 -- para proxysql
-Para crear usuarios en proxysql primero deben ser creados sobre la base de datos RDS 
+Para crear usuarios de aplicación en proxysql primero deben ser creados sobre la base de datos RDS 
 
 CREATE USER 'user_NOMBRE_USUARIO'@'%' IDENTIFIED BY 'CLAVE_A_ASIGNAR';
-GRANT SELECT, INSERT, UPDATE ON BD_ACCESO_SOLICITADO.* TO 'user_NOMBRE_USUARIO'@'%';
+GRANT CREATE, SELECT, INSERT, UPDATE, REFERENCES ON BD_ACCESO_SOLICITADO.* TO 'user_NOMBRE_USUARIO'@'%';
 
 NOMBRE_USUARIO = Es el nombre del usuario que deben entregar los solicitantes
 CLAVE_A_ASIGNAR = asignarle una clave 
 
-Luego validar usando el siguiente SQL el hash de la clave que se usará más adelante
+Luego validar usando el siguiente query el hash de la clave en la RDS
 select `User` , authentication_string   from mysql.user where `User` in (  'user_NOMBRE_USUARIO' );
 
 
@@ -197,7 +164,7 @@ conectarnos a la Base de datos
 
 mysql -u admin -padmin -h 127.0.0.1 -P6032 --prompt='Admin>'
 
-ejecutar el query para validar que el usuario no existe:
+ejecutar el query para validar que el usuario no existe en el PROXYSQL:
 
 Admin> select * from mysql_users where username = 'usuario_a_agregar';
 
@@ -232,11 +199,11 @@ ej:
 Luego tomamos el backup del siguiente archivo  ejecutando estas lineas
 
 export fechaEjecucion=$(date +"%Y-%m-%d-%H-%M-%S") 
-cp  /etc/proxysql.cnf /etc/proxysql.cnf-bkp-$fechaEjecucion
+sudo cp  /etc/proxysql.cnf /etc/proxysql.cnf-bkp-$fechaEjecucion
 
 abrimos el archivo 
 
-vi  /etc/proxysql.cnf
+sudo vi /etc/proxysql.cnf
 
 y buscamos la sección 
 
@@ -252,70 +219,76 @@ mysql_users: {
   { username = "ultima_linea" , password = "password_ultima_linea" , default_hostgroup = 0 , active = 1, max_connections=500 },
   { username = "user_centralization" , password = "*811CA05F641EC836EC565311F7E2345DCAF635FA" , default_hostgroup = 0 , active = 1, max_connections=500 }
 
+Guardamos y listo ya debio haber quedado el cambio completado
 
-
-  
 
 ------ PC-458
-drop user 'user_users-sync';
+DROP USER 'user_users-sync';
+
 CREATE USER 'user_users_sync'@'%' IDENTIFIED BY 'AO=Ei6pGEt5Q';
+
 GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'user_users_sync'@'%';
 GRANT SELECT, INSERT, UPDATE ON bitnami_moodle.* TO 'user_users_sync'@'%';
-select `User` , authentication_string  
- from mysql.user
-where `User` in (  'user_users_sync' )
 
- 
-select a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked  
+SELECT `User` , authentication_string from mysql.user where `User` in (  'user_users_sync' )
 
-select `User` , authentication_string  
- from mysql.user
-where `User` in (  'user_users-sync' )
-
-
+SELECT a.Host, a.`User` , a.password_expired , a.password_last_changed, a.account_locked  
+SELECT `User` , authentication_string from mysql.user where `User` in (  'user_users-sync' )
 
 UPDATE mysql_users SET password='*C5386E368F9719F26A3764FED7156C5C5FB54C13' WHERE username= 'user_users-sync';
 UPDATE mysql_users SET username='user_users_sync' WHERE username= 'user_users-sync';
 
-
 { username = "user_users-sync" , password = "*C5386E368F9719F26A3764FED7156C5C5FB54C13" , default_hostgroup = 0 , active = 1, max_connections=500 }
-
-
-
-
-
-
 
 CREATE DATABASE `goals` /*!40100 DEFAULT CHARACTER SET utf8 */;
 
-
-
-
-
-
 ------------------------
+DROP USER datastream;
+
 CREATE USER 'datastream'@'%' IDENTIFIED BY '8UiUV3ZqNqxsiZQiUC3L';
-GRANT REPLICATION SLAVE, SELECT, RELOAD, REPLICATION CLIENT, LOCK TABLES, EXECUTE ON *.* TO 'datastream'@'%';
+
+GRANT, SELECT, RELOAD, REPLICATION SLAVE, REPLICATION CLIENT, Lock Tables, Execute ON *.* TO 'datastream'@'%';
 FLUSH PRIVILEGES;
 
-
-
-
-
 GRANT ALTER ON goals.user_has_cycle TO 'user_goals'@'%';
-
-
 GRANT DELETE ON goals.user_has_cycle TO 'user_goals'@'%';
-
-
-
 ALTER TABLE company MODIFY COLUMN name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL;
-
 
 --------------- proxysql
 
 SHOW VARIABLES LIKE 'mysql-connect_timeout_server';
-select hostgroup, status, ConnERR, Queries, Latency_ms from stats_mysql_connection_pool;
+SELECT hostgroup, status, ConnERR, Queries, Latency_ms from stats_mysql_connection_pool;
 SET mysql-connect_timeout_server=9000;
 LOAD MYSQL VARIABLES TO RUNTIME;
 SAVE MYSQL VARIABLES TO DISK;
+
+
+
+----- PTT-553
+drop user user_management;
+CREATE USER 'user_management'@'%' IDENTIFIED BY 'GKqGDLRem1VKyocujVLK0';
+GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'user_management'@'%';
+
+
+select `User` , authentication_string   from mysql.user where `User` in (  'user_management' );
+
+*369015F9D72DF914AAC6E53A6E512A1F13712C62
+
+usuario user_management prodzb%VLjP2H27Kx&bYcopielo pa borrarlo por fa
+
+*BCEEA4AA102745746F3C28E54445C20372B5171A
+
+
+----- IN-683
+GRANT SELECT ON goals.* TO 'jpolanco'@'%';
+GRANT SELECT ON goals.* TO 'mrodriguez'@'%';
+
+
+
+------ 
+
+GRANT SELECT ON adminhr.* TO 'kdromero'@'%';
+
+
+
+

@@ -63,15 +63,7 @@ for profile in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOS
     done
 done
 
-echo "Extracción datos del servidor "$JBOSS_DC_IP
-
-for profile in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command='ls profile'); do 
-    for datasource in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="ls /profile=$profile/subsystem=datasources/data-source") ; do
-        echo "Procesando perfil: "$profile " revisando datasource " $datasource;
-        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=user-name)" | grep result | sed 's/"//g' | awk '{print "usuario:" $3}';
-        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=password)" | grep result | sed 's/"//g' | awk '{print "password:" $3}';
-    done
-done
+#Aqui va copia del VAULT
 
 echo -e "${CYAN}Realizando copia de seguridad del archivo:${RESET}${VERDE} domain.xml${RESET}"
 FECHA=$(date +"%Y-%m-%d")
@@ -100,10 +92,17 @@ V_PASSWORD_ENC=$(cat texto_salida | grep -A7 "<vault>" | grep "MASK-" | awk -F '
 
 
 #actualizando el archivo de configuracion
-echo -e "${ROJO}Actualizando configuración${RESET}"
+echo -e "${ROJO}Creando definiciones de vault en los nodos${RESET}"
 #sed -i "/<\/extensions>/r /dev/stdin" "host-master.xml" <<< "$vault_data"
-export command_jb="/host=master/core-service=vault:add(vault-options=[(\"KEYSTORE_URL\" => \"${JBOSS_HOME}/${V_FOLDER}/${V_KEY_NAME}\"),(\"KEYSTORE_PASSWORD\" => \"${V_PASSWORD_ENC}\"),(\"KEYSTORE_ALIAS\" => \"${V_ALIAS}\"),(\"SALT\" => \"${V_SALT}\"),(\"ITERATION_COUNT\" => \"${V_ITERATION}\"),(\"ENC_FILE_DIR\" => \"$JBOSS_HOME/$V_FOLDER/\")])"
-$JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="${command_jb}"
+
+for jb_host in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="ls host") ; do
+    command_jb="/host=\"$jb_host\"/core-service=vault:add(vault-options=[(\"KEYSTORE_URL\" => \"${JBOSS_HOME}/${V_FOLDER}/${V_KEY_NAME}\"),(\"KEYSTORE_PASSWORD\" => \"${V_PASSWORD_ENC}\"),(\"KEYSTORE_ALIAS\" => \"${V_ALIAS}\"),(\"SALT\" => \"${V_SALT}\"),(\"ITERATION_COUNT\" => \"${V_ITERATION}\"),(\"ENC_FILE_DIR\" => \"$JBOSS_HOME/$V_FOLDER/\")])"
+    $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="${command_jb}"        
+done
+
+
+
+
 
 SCRIPT_INICIO=$(date +%s)
 SCRIPT_FIN=$(date +%s)
@@ -111,3 +110,29 @@ SCRIPT_FIN=$(date +%s)
 SCRIPT_TOTAL=$((SCRIPT_FIN - SCRIPT_INICIO))
 SCRIPT_TOTAL=$(($SCRIPT_TOTAL / 60))
 echo -e "${CYAN}La ejecución de la tarea tomó ${SCRIPT_TOTAL} minutos en ejecutarse."
+
+
+
+
+
+
+######
+#echo  -e "${CYAN}Extracción datos del servidor ${RESET}"$JBOSS_DC_IP
+#
+#for profile in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command='ls profile'); do 
+#    for datasource in $($JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="ls /profile=$profile/subsystem=datasources/data-source") ; do
+#        echo "Procesando perfil: "$profile " revisando datasource " $datasource;
+#        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=user-name)" | grep result | sed 's/"//g' | awk '{print "usuario:" $3}';
+#        $JBOSS_HOME/bin/jboss-cli.sh -c --controller=$JBOSS_DC_IP:$JBOSS_DC_PORT --command="/profile=$profile/subsystem=datasources/data-source=$datasource:read-attribute(name=password)" | grep result | sed 's/"//g' | awk '{print "password:" $3}';
+#    done
+#done
+#
+##crear link para servicio
+#ln -s /opt/rh/jboss-eap-7.2/bin/init.d/jboss-eap-rhel.sh /etc/init.d/eap-72
+#
+##habiltiar servicio
+#systemctl enable {nombre_servicio}
+#
+##cuando modifique le servicio
+#
+#systemctl daemon-reload
