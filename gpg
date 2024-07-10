@@ -18,6 +18,7 @@ gpg --delete-secret-key [fingerprint de la llave a borrar]
 
 #exportar llave
 gpg --export -a uid_llave > my-public-key.key
+
 gpg --export-secret-key -a uid > my-private-key.key
 
 #importar llave
