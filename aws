@@ -1,7 +1,7 @@
-aws rds describe-db-engine-versions --engine mysql para ver si se pueden aplicar cambios sin reiniciar yo use en este caso el valor de SupportsCertificateRotationWithoutRestart
+aws rds describe-db-engine-versions --engine mysql para ver si se pueden aplicar cambios sin reiniciar yo valide en este caso el valor de SupportsCertificateRotationWithoutRestart
 
 
-comandos agnte cloudwatch
+comandos agente cloudwatch para metricas adicionales, genera cobro el uso de estos
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a  status
 
 
@@ -12,3 +12,8 @@ aws rds download-db-log-file-portion --db-instance-identifier manual-rds-restore
 
 #Crear conexion vpn clasica con GCP
 https://www.linkedin.com/pulse/site-to-site-vpn-between-gcp-aws-cloud-aslam-chandio
+
+#eliminar stack forzando el borrado solo funciona cuando ya se intento borrar y no borró correctamente
+aws cloudformation delete-stack --stack-name <stack-name> --deletion-mode FORCE_DELETE_STACK
+
+aws cloudformation delete-stack --stack-name squad-poc-cdk-infrastructure-automation-CFStack --deletion-mode FORCE_DELETE_STACK
