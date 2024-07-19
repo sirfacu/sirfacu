@@ -199,3 +199,25 @@ GRANT SELECT ON goals.* TO 'mrodriguez'@'%';
 
 GRANT SELECT ON adminhr.* TO 'kdromero'@'%';
 
+
+
+--- IN-742
+
+
+SELECT * from mysql.user where `User` in ( 'ofguerrero', 'jlopez', 'jprodriguez', 'yillanten')
+
+CREATE USER 'yillanten'@'%' IDENTIFIED BY 'Gfb0ivWe8FhKJjRmzFdh';
+
+GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'jlopez'@'%';
+GRANT SELECT, INSERT, UPDATE ON bitnami_moodle.* TO 'jlopez'@'%';
+GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'ofguerrero'@'%';
+GRANT SELECT, INSERT, UPDATE ON bitnami_moodle.* TO 'ofguerrero'@'%';
+GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'jprodriguez'@'%';
+GRANT SELECT, INSERT, UPDATE ON bitnami_moodle.* TO 'jprodriguez'@'%';
+GRANT SELECT, INSERT, UPDATE ON adminhr.* TO 'yillanten'@'%';
+GRANT SELECT, INSERT, UPDATE ON bitnami_moodle.* TO 'yillanten'@'%';
+
+--- --- IN-741
+
+GRANT DELETE ON adminhr.ubits_user_role TO 'user_management'@'%';
+GRANT DELETE ON adminhr.ubits_user_auth0_role TO 'user_management'@'%';

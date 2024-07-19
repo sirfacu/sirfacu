@@ -291,4 +291,15 @@ GRANT SELECT ON adminhr.* TO 'kdromero'@'%';
 
 
 
+--- IN-741
+
+GRANT DELETE ON adminhr.ubits_user_role TO 'user_management'@'%';
+GRANT DELETE ON adminhr.ubits_user_auth0_role TO 'user_management'@'%';
+
+
+
+
+
+
+
 
