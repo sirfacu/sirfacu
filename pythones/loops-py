@@ -1,0 +1,36 @@
+# While Loop Walkthrough
+count = 0
+print("Starting While Loop")
+while count <= 3:
+  # Loop Body
+  # Print if the condition is still true
+  print("Loop Iteration - count <= 3 is still true")
+  # Print the current value of count 
+  print("Count is currently " + str(count))
+  # Increment count
+  count += 1
+  print(" ----- ")
+print("While Loop ended")
+
+# Your code below: 
+countdown = 10
+print("Starting While Loop v2")
+while countdown >= 0:
+  print("count down " + str(countdown))
+  countdown -= 1
+print("We have liftoff!")
+
+
+
+###### breaks
+
+items_on_sale = ["blue shirt", "striped socks", "knit dress", "red headband", "dinosaur onesie"]
+
+print("Checking the sale list!")
+
+for item in items_on_sale:
+  print(item)
+  if item == "knit dress":
+    break
+
+print("End of search!")

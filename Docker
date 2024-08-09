@@ -6,4 +6,18 @@ docker run -it --rm {NAME}:{TAG}  /bin/bash
 
 #para AWS
 docker tag {NAME}:{TAG} id_cuenta.dkr.ecr.us-east-1.amazonaws.com/{REPO}/{NAME}:{TAG}# taguea la imagen
-docker push id_cuenta.dkr.ecr.us-east-1.amazonaws.com/{REPO}/{NAME}:{TAG} #
+docker push id_cuenta.dkr.ecr.us-east-1.amazonaws.com/{REPO}/{NAME}:{TAG} 
+
+#ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+#AWS_DEFAULT_REGION=us-east-1
+#ECR_URI_NAME=$ACCOUNT_ID".dkr.ecr."$AWS_DEFAULT_REGION".amazonaws.com"
+#REPO=ubits-dev-devops-ecs-ecr 
+#TAG=21
+#IMG_NAME=node
+#aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI_NAME/$REPO
+#docker build -f DockerfileNode . -t $IMG_NAME-$TAG
+#docker tag $IMG_NAME-$TAG $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG
+#docker images
+#docker push $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG
+
+#la imagen en el ECR se llamaria o eria en image tag como ej: node-21
