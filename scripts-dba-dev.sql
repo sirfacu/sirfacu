@@ -299,6 +299,7 @@ GRANT DELETE ON adminhr.ubits_user_auth0_role TO 'user_management'@'%';
 
 
 ----IN-833
+
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'scbustos'@'%';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'jsmoreno'@'%';
 

@@ -225,12 +225,32 @@ GRANT DELETE ON adminhr.ubits_user_auth0_role TO 'user_management'@'%';
 
 
 ----IN-833
+CREATE USER 'scbustos'@'%' IDENTIFIED BY 'L-YHpHn89f!Qz5GS=*N$c1gE';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'scbustos'@'%';
+GRANT SELECT ON bitnami_moodle.* TO 'scbustos'@'%';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'jsmoreno'@'%';
 
 
 
-
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "Statement1",
+			"Effect": "Allow",
+			"Principal": {
+				"Service": "cloudfront.amazonaws.com"
+			},
+			"Action": "s3:GetObject",
+			"Resource": "arn:aws:s3:::test-public-app-resources/*",
+			"Condition": {
+				"StringEquals": {
+					"AWS:SourceArn": "arn:aws:cloudfront::180456184118:distribution/E1JUOWJ44ETUZE"
+				}
+			}
+		}
+	]
+}
 
 
 

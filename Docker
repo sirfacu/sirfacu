@@ -21,3 +21,9 @@ docker push id_cuenta.dkr.ecr.us-east-1.amazonaws.com/{REPO}/{NAME}:{TAG}
 #docker push $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG
 
 #la imagen en el ECR se llamaria o eria en image tag como ej: node-21
+
+docker run -d nombre_imagen
+docker exec -it nombre_imagen sh
+
+docker stop $(docker ps -q)
+docker rm $(docker ps -a -q)

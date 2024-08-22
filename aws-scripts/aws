@@ -17,3 +17,40 @@ https://www.linkedin.com/pulse/site-to-site-vpn-between-gcp-aws-cloud-aslam-chan
 aws cloudformation delete-stack --stack-name <stack-name> --deletion-mode FORCE_DELETE_STACK
 
 aws cloudformation delete-stack --stack-name squad-poc-cdk-infrastructure-automation-CFStack --deletion-mode FORCE_DELETE_STACK
+
+
+
+###### USER-DATA para instalar postgres en amazon linux
+
+#!/bin/bash
+# Actualizar paquetes e instalar PostgreSQL
+yum update -y
+amazon-linux-extras install -y postgresql14
+
+# Inicializar el servicio de PostgreSQL y habilitarlo para que inicie con el sistema
+/usr/bin/postgresql-setup --initdb
+systemctl enable postgresql
+systemctl start postgresql
+
+# Configurar PostgreSQL para aceptar conexiones locales
+sed -i "s/^#listen_addresses = 'localhost'/listen_addresses = '*'/" /var/lib/pgsql/data/postgresql.conf
+
+# Modificar pg_hba.conf para permitir autenticación con contraseña
+echo "host all  all    0.0.0.0/0  md5" >> /var/lib/pgsql/data/pg_hba.conf
+
+# Reiniciar el servicio de PostgreSQL para aplicar configuraciones
+systemctl restart postgresql
+
+# Crear el usuario y la base de datos
+sudo -i -u postgres psql -c "CREATE USER infradba WITH PASSWORD 'bfwlIs1z#Gsg@8r@';"
+sudo -i -u postgres psql -c "CREATE DATABASE \"organization-chart\" OWNER infradba;"
+
+# Conceder todos los privilegios al usuario en la base de datos
+sudo -i -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE \"organization-chart\" TO infradba;"
+
+# Reiniciar el servicio para asegurarse de que todos los cambios se apliquen
+systemctl restart postgresql
+
+
+
+############### FIN USER-DATA para instalar postgres en amazon linux
