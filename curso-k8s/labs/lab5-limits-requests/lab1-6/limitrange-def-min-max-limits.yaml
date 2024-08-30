@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+  labels:
+    app: development
+
+---    
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-min-max-lr
+  namespace: prod
+spec:
+  limits:
+  - max:
+      memory: 1Gi
+      cpu: 1
+    min:
+      memory: 100M
+      cpu: 100m
+    type: Container
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: min-max-mem-cpu
+  namespace: prod
+  labels: 
+    app: development
+spec:
+  containers:
+  - name: min-max-pod
+    image: nginx:alpine
+    resources:
+      limits:
+        memory: 50M
+        cpu: 50m
+      requests:
+        memory: 400M
+        cpu: 0.3
+
+# 
+# La idea de este lab es crear un pod en un namespace que tenga valores min y maximos definidos.
+# si uno intenta modificar cualquier cosa del pod directamente en el manifiesto como la memoria o cp arrojara
+# una excepción como la a continuación, los pods no se pueden modificar de esta forma toca desde un nivel superior
+# es decir un deployment
+# The Pod "min-max-mem-cpu" is invalid: spec: Forbidden: pod updates may not change fields other than `spec.containers[*].image`,`spec.initContainers[*].image`,`spec.activeDeadlineSeconds`,`spec.tolerations` (only additions to existing tolerations),`spec.terminationGracePeriodSeconds` (allow it to be set to 1 if it was previously negative)
+# 
+
+# intenare con estos valores lanzar mi pod
+#       limits:
+#               memory: 2G
+#               cpu: 2
+#             requests:
+#               memory: 400M
+#               cpu: 0.3
+# kubectl apply -f limitrange-def-min-max-limits.yaml 
+# namespace/prod unchanged
+# limitrange/mem-min-max-lr configured
+# Error from server (Forbidden): error when creating "limitrange-def-min-max-limits.yaml": pods "min-max-mem-cpu" is forbidden: [maximum cpu usage per Container is 1, but limit is 2, maximum memory usage per Container is 1Gi, but limit is 2G]
+
+# esto anterior sucedio porque supere el maximo
+
+# Ahora se procede a cambiar los valores por estos:
+#      limits:
+#              memory: 50M
+#              cpu: 50m
+#            requests:
+#              memory: 400M
+#              cpu: 0.3
+
+#Al hacerlo nos aparece el siguiente mensaje
+
+# kubectl apply -f limitrange-def-min-max-limits.yaml 
+# namespace/prod unchanged
+# limitrange/mem-min-max-lr configured
+# The Pod "min-max-mem-cpu" is invalid: 
+# * spec.containers[0].resources.requests: Invalid value: "300m": must be less than or equal to cpu limit of 50m
+# * spec.containers[0].resources.requests: Invalid value: "400M": must be less than or equal to memory limit of 50M

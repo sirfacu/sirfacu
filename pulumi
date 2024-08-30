@@ -16,8 +16,13 @@ pulumi login
 
 # pulumi stack init organization/nombre_stack/ambiente --> crear un nuevo stack una vez se ejecuta
 
+
+pulumi stack init infrastructure-lower-envs infrastructure-lower-envs/databases/test
 pulumi stack ls
-pulumi stack rm nombre_stack
 pulumi stack select nombre_stack
+
+pulumi stack rm nombre_stack
+
+# para cuando son parameter store pararse en la raiz del repo ejecutar el make envi.env-vars
 
 

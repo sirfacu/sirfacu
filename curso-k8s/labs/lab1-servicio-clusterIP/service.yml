@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-test
+  labels:
+    app: front
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: front
+  template:
+    metadata:
+      labels:
+        app: front
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+---
+#por defecto el servicio se crea cluster ip
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  labels:
+    app: front
+spec:
+  type: ClusterIP #existen varios tipos clusterIP , no me deja exponer los servicios fuera del cluster nodeport sí Load Balancer se usa en ambientes cloud
+  selector:
+    app: front #aqui coloco el mismo de label para que el service busque los pod de ese label
+  ports:
+  - name: my-first-svc-port
+    protocol: TCP
+    port: 8080 #El puerto con el que escuchara el servicio
+    targetPort: 80 # elpuerto que corre el container
+
+  ###comandos usados para validar y demas
+  # 
+  #kubectl get svc -l app=front
+  #NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+  #my-service   ClusterIP   10.104.190.6   <none>        8080/TCP   2m9s
+  #kubectl describe svc -l app=front
+  # Name:                     my-service
+  # Namespace:                default
+  # Labels:                   app=front
+  # Annotations:              <none>
+  # Selector:                 app=front
+  # Type:                     ClusterIP
+  # IP Family Policy:         SingleStack
+  # IP Families:              IPv4
+  # IP:                       10.104.190.6
+  # IPs:                      10.104.190.6
+  # Port:                     my-first-svc-port  8080/TCP
+  # TargetPort:               80/TCP
+  # Endpoints:                10.244.0.5:80,10.244.0.6:80,10.244.0.7:80 #llas ip de mis 3 pods corriendo porq asi lo defini en el replicaSet
+  # Session Affinity:         None
+  # Internal Traffic Policy:  Cluster
+  # Events:                   <none>
+
+#kubectl get pods -l app=front -o wide # con este comando valido las ips respecto de las que salen en el targetPort
+#NAME                               READY   STATUS    RESTARTS   AGE     IP           NODE       NOMINATED NODE   READINESS GATES
+#deployment-test-6b78489d56-2857r   1/1     Running   0          7m38s   10.244.0.5   minikube   <none>           <none>
+#deployment-test-6b78489d56-hk5pv   1/1     Running   0          7m38s   10.244.0.7   minikube   <none>           <none>
+#deployment-test-6b78489d56-lk4gf   1/1     Running   0          7m38s   10.244.0.6   minikube   <none>           <none>
+
+
+## voy a eliminar uyn pod y ver que las replicas si tienen el comportamiento deseado
+
+#kubectl delete pod deployment-test-6b78489d56-hk5pv
+#pod "deployment-test-6b78489d56-hk5pv" deleted
+
+#sirfacu@facucorp:~$ kubectl get pods -l app=front -o wide
+#NAME                               READY   STATUS    RESTARTS   AGE     IP           NODE       NOMINATED NODE   READINESS GATES
+#deployment-test-6b78489d56-2857r   1/1     Running   0          8m54s   10.244.0.5   minikube   <none>           <none>
+#deployment-test-6b78489d56-4lqlj   1/1     Running   0          2s      10.244.0.8   minikube   <none>           <none>
+#deployment-test-6b78489d56-lk4gf   1/1     Running   0          8m54s   10.244.0.6   minikube   <none>           <none>
+
+
+# vamos a crear un pod directo por consola y probar si se agrega al deployment
+#kubectl run podtest --image=nginx:alpine # creo el pod
+
+#le agrego la etiqueta
+#kubectl label pods podtest app=front
+
+#ahora valido mis endpoint del servicio que cree
+#kubectl describe endpoints my-service
+#Name:         my-service
+#Namespace:    default
+#Labels:       app=front
+#Annotations:  endpoints.kubernetes.io/last-change-trigger-time: 2024-08-22T01:53:44Z
+#Subsets:
+#  Addresses:          10.244.0.5,10.244.0.6,10.244.0.8,10.244.0.9
+#  NotReadyAddresses:  <none>
+#  Ports:
+#    Name               Port  Protocol
+#    ----               ----  --------
+#    my-first-svc-port  80    TCP
+#
+#Events:  <none>
+
+#reviso los pods y vemos como se agrego
+#sirfacu@facucorp:~$ kubectl get pods -l app=front
+#NAME                               READY   STATUS    RESTARTS   AGE
+#deployment-test-6b78489d56-2857r   1/1     Running   0          13m
+#deployment-test-6b78489d56-4lqlj   1/1     Running   0          4m38s
+#deployment-test-6b78489d56-lk4gf   1/1     Running   0          13m
+#podtest                            1/1     Running   0          92s
+
+
+#Realmente esto es un problema ya que ese podtest puede no tener inconsistencia a lo que si tiene mis pods creados 
+
+#CREAR POD EFIMERO ENTRAR POR sh
+
+#kubectl run --rm -ti pod-efimero --image=nginx:alpine -- sh

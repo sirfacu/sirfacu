@@ -1,0 +1,3 @@
+El limit range afecta todos los recursos a nivel de objetos (Pod), por el contrario el resourceQuota
+afecta a nivel del namespace.
+

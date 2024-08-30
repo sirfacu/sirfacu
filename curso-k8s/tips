@@ -1,0 +1,49 @@
+#crear pod efimero
+kubectl run --rm -ti NOMBRE_MI_POD_EFIMERO --image=IMAGEN:TAG -- sh -n NOMBRE_NAMESPACE
+#para consumir un servicio de otro namespace se hace de la siguiente forma:
+SERVICE_NAME + NAMESPACE + svc.cluster.local
+#respecto de los contextos
+kubectl config current-context
+# para ver la configuracion del archivo hacemos:
+kubectl config view
+
+# como cambiar mi set_context para moverme entre varios contextos
+# kubectl config set-context NOMBRE_CONTEXTO --namespace= NOMBRE_NAMESPACE --cluster= NOMBRE_CLUSTER --user USUARIO
+kubectl config set-context ci-dev-context --namespace= ci-dev --cluster=minikube  --user minikube
+# Ahora para usarlo hacemos esto:
+# kubectl config use-context NOMBRE_CONTEXTO
+kubectl config use-context ci-dev-context
+
+
+
+#limits y request
+REQUEST --> Esto indicará a k8s que necesita un runner donde le asegure esa capacidad es decir 
+            si le colo 20Mb a mi despliegue entonces me debe asegurar siempre esa capacidad de manera dedicada
+LIMITS --> indique el adicional TOTAL al que puede pasar un app.
+
+Estos aplican para core y para memoria
+
+ej: si le puse un request de 20MB y un limit de 40MB, k8s me asegura que mi app tendra el valor de 20 MB 
+    sin embargo si mi app por alguna ciscunstancia requiere mas el limit me dará el topé maximo en este caso subira otras
+    20MB completando las 40 indicadas en el limit
+
+# revisar info del nodo de k8s
+kubectl get nodes
+
+# Revisar estado del nodo y mas información
+kubectl describe node minikube
+
+#listar los limit range que hayan
+kubectl get limitrange -n <NAMESPACE>
+
+# Describir los limitrange
+kubectl describe limitrange <NOMBRE_LIMIT_RANGE>-n <NAMESPACE>
+
+## PROBES
+
+# kubelet es el encargado de lanzar los probes en los pods, se debe parametrizar en el pod y esta preguntando el estado
+# o lo que definamos el probe, existen 3 formas:
+
+# 1. kubelet ejecuta un comando
+# 2. Por prueba TCP a un puerto
+# 3. HTTP espera una respuesta tipo 200-399

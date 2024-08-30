@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend-lab3-docker
+        image: frontend-k8s-go-app
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+
+---
+#por defecto el servicio se crea cluster ip
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-lab3-part2
+  labels:
+    app: frontend
+spec:
+  type: NodePort
+  selector:
+    app: frontend #aqui coloco el mismo de label para que el service busque los pod de ese label
+  ports:
+  - name: frontend-srv
+    protocol: TCP
+    port: 80 #El puerto con el que escuchara el servicio
+    #targetPort: 80 si no lo especifico toma el mismo valor del port

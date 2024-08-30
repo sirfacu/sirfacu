@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cpu-demo
+spec:
+  containers:
+  - name: cpu-demo-ctr
+    image: vish/stress
+    resources:
+      limits:
+        cpu: "1"
+      requests:
+        cpu: "0.5"
+    args:
+    - -cpus
+    - "2" 
+
+# La idea de este lab es revisar porque apesar de pedirle 2 cores y aplicar el manifiesto k8s no los da y mas aún que 
+# el pod si corre, en estos momentos k8s se ciñe al limite y a pesar que yo pida mas no los entrega aún pudiendo.
+
+#revisamos la info del nodo
+#  kubectl get nodes
+# NAME       STATUS   ROLES           AGE     VERSION
+# minikube   Ready    control-plane   3d14h   v1.30.0
+
+#revisamos estado del nodo y nos centramos en los valores descomentareados abajo
+#  kubectl describe node minikube
+#    Name:               minikube
+#    Roles:              control-plane
+#    Labels:             beta.kubernetes.io/arch=amd64
+                    #    beta.kubernetes.io/os=linux
+                    #    kubernetes.io/arch=amd64
+                    #    kubernetes.io/hostname=minikube
+                    #    kubernetes.io/os=linux
+                    #    minikube.k8s.io/commit=5883c09216182566a63dff4c326a6fc9ed2982ff
+                    #    minikube.k8s.io/name=minikube
+                    #    minikube.k8s.io/primary=true
+                    #    minikube.k8s.io/updated_at=2024_08_23T18_05_14_0700
+                    #    minikube.k8s.io/version=v1.33.1
+                    #    node-role.kubernetes.io/control-plane=
+                    #    node.kubernetes.io/exclude-from-external-load-balancers=
+#    Annotations:        kubeadm.alpha.kubernetes.io/cri-socket: unix:///var/run/cri-dockerd.sock
+                    #    node.alpha.kubernetes.io/ttl: 0
+                    #    volumes.kubernetes.io/controller-managed-attach-detach: true
+#    CreationTimestamp:  Fri, 23 Aug 2024 18:05:11 -0500
+#    Taints:             <none>
+#    Unschedulable:      false
+#    Lease:
+  #    HolderIdentity:  minikube
+  #    AcquireTime:     <unset>
+  #    RenewTime:       Tue, 27 Aug 2024 08:48:27 -0500
+#    Conditions:
+  #    Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  #    ----             ------  -----------------                 ------------------                ------                       -------
+  #    MemoryPressure   False   Tue, 27 Aug 2024 08:46:25 -0500   Fri, 23 Aug 2024 18:05:10 -0500   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  #    DiskPressure     False   Tue, 27 Aug 2024 08:46:25 -0500   Fri, 23 Aug 2024 18:05:10 -0500   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  #    PIDPressure      False   Tue, 27 Aug 2024 08:46:25 -0500   Fri, 23 Aug 2024 18:05:10 -0500   KubeletHasSufficientPID      kubelet has sufficient PID available
+  #    Ready            True    Tue, 27 Aug 2024 08:46:25 -0500   Fri, 23 Aug 2024 18:05:11 -0500   KubeletReady                 kubelet is posting ready status
+#    Addresses:
+  #    InternalIP:  192.168.49.2
+  #    Hostname:    minikube
+#    Capacity:
+  #    cpu:                8
+  #    ephemeral-storage:  488644656Ki
+  #    hugepages-1Gi:      0
+  #    hugepages-2Mi:      0
+  #    memory:             32580940Ki
+  #    pods:               110
+#    Allocatable:
+  #    cpu:                8
+  #    ephemeral-storage:  488644656Ki
+  #    hugepages-1Gi:      0
+  #    hugepages-2Mi:      0
+  #    memory:             32580940Ki
+  #    pods:               110
+#    System Info:
+  #    Machine ID:                 80a9e8dc58df451fbcb70f4fd8c9d12c
+  #    System UUID:                0fccef58-27e8-4473-b0a0-eb92757119a3
+  #    Boot ID:                    215b9c7a-f86e-4391-8b75-cd88a8cfddce
+  #    Kernel Version:             6.8.0-40-generic
+  #    OS Image:                   Ubuntu 22.04.4 LTS
+  #    Operating System:           linux
+  #    Architecture:               amd64
+  #    Container Runtime Version:  docker://26.1.1
+  #    Kubelet Version:            v1.30.0
+  #    Kube-Proxy Version:         v1.30.0
+#    PodCIDR:                      10.244.0.0/24
+#    PodCIDRs:                     10.244.0.0/24
+#    Non-terminated Pods:          (8 in total)
+  #    Namespace                   Name                                CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  #    ---------                   ----                                ------------  ----------  ---------------  -------------  ---
+  #    default                     cpu-demo                            500m (6%)     1 (12%)     0 (0%)           0 (0%)         2m34s
+  #    kube-system                 coredns-7db6d8ff4d-5cbq5            100m (1%)     0 (0%)      70Mi (0%)        170Mi (0%)     3d14h
+  #    kube-system                 etcd-minikube                       100m (1%)     0 (0%)      100Mi (0%)       0 (0%)         3d14h
+  #    kube-system                 kube-apiserver-minikube             250m (3%)     0 (0%)      0 (0%)           0 (0%)         3d14h
+  #    kube-system                 kube-controller-manager-minikube    200m (2%)     0 (0%)      0 (0%)           0 (0%)         3d14h
+  #    kube-system                 kube-proxy-ndf77                    0 (0%)        0 (0%)      0 (0%)           0 (0%)         3d14h
+  #    kube-system                 kube-scheduler-minikube             100m (1%)     0 (0%)      0 (0%)           0 (0%)         3d14h
+  #    kube-system                 storage-provisioner                 0 (0%)        0 (0%)      0 (0%)           0 (0%)         3d14h
+#    Allocated resources:
+  #    (Total limits may be over 100 percent, i.e., overcommitted.)
+  #    Resource           Requests     Limits
+  #    --------           --------     ------
+#      cpu                1250m (15%)  1 (12%)
+#      memory             170Mi (0%)   170Mi (0%)
+#      ephemeral-storage  0 (0%)       0 (0%)
+#      hugepages-1Gi      0 (0%)       0 (0%)
+#      hugepages-2Mi      0 (0%)       0 (0%)
+#    Events:
+  #    Type    Reason                   Age                    From             Message
+  #    ----    ------                   ----                   ----             -------
+  #    Normal  Starting                 6m44s                  kube-proxy       
+  #    Normal  Starting                 6m48s                  kubelet          Starting kubelet.
+  #    Normal  NodeHasSufficientMemory  6m48s (x8 over 6m48s)  kubelet          Node minikube status is now: NodeHasSufficientMemory
+  #    Normal  NodeHasNoDiskPressure    6m48s (x8 over 6m48s)  kubelet          Node minikube status is now: NodeHasNoDiskPressure
+  #    Normal  NodeHasSufficientPID     6m48s (x7 over 6m48s)  kubelet          Node minikube status is now: NodeHasSufficientPID
+  #    Normal  NodeAllocatableEnforced  6m48s                  kubelet          Updated Node Allocatable limit across pods
+  #    Normal  RegisteredNode           6m33s                  node-controller  Node minikube event: Registered Node minikube in Controller

@@ -132,10 +132,10 @@ GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON learning_map_dev.* TO 'edelga
 
 ALTER USER 'edelgado'@'%' IDENTIFIED BY  'Ub1T$2024%*';
 
-## e5mHY156H\u0026E3JmL
+## e5mHY156H\u0026E3JmLe5mHY156H\u0026E3JmL
 ------ PC-458
-
-ALTER USER 'user_users_sync'@'%' IDENTIFIED BY 'e5mHY156H&E3IwK';
+drop user 'user_users_sync'
+CREATE USER 'user_users_sync'@'%' IDENTIFIED BY 'e5mHY156H&E3IwK';
 SELECT `User` , authentication_string   from mysql.user where `User` in (  'user_users_sync' );
 GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON adminhr.* TO 'user_users_sync'@'%';
 GRANT CREATE,REFERENCES, SELECT, INSERT, UPDATE ON bitnami_moodle.* TO 'user_users_sync'@'%';

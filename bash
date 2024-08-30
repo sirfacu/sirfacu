@@ -52,4 +52,5 @@ mysql -u admin -padmin -h 127.0.0.1 -P 6032 -e "SHOW PROCESSLIST" | grep  "user_
 #ejecucion 
 mysql -u admin -padmin -h 127.0.0.1 -P 6032 < script_kill_user
 
-#
+#realizar port-forward
+ssh -i ~/.ssh/squad-poc-infra-key.pem -N -L 3306:rds.squad-poc.sandteck.com:3306 ec2-user@bastion.squad-poc.sandteck.com

@@ -1,0 +1,175 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: uat
+  labels:
+    app: backend
+
+---    
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: res-quota-demo
+  namespace: uat
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: "1Gi"
+    limits.cpu: "2"
+    limits.memory: "2Gi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quotas-test
+  namespace: uat
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: 500
+            cpu: 500
+          limits:
+            memory: 500
+            cpu: 500
+
+##
+# Con el resource Quota tambien podemos limitar  la cantidad de objetos
+
+# Asi se veria
+#   k8s describe resourcequotas -n res-quote
+# Name:            res-quota-demo
+# Namespace:       res-quote
+# Resource         Used  Hard
+# --------         ----  ----
+# limits.cpu       0     2
+# limits.memory    0     2Gi
+# requests.cpu     0     1
+# requests.memory  0     1Gi
+
+#vamos a estresar con la siguiente config dentro del deployment al limite del namespace
+
+# spec:
+#       containers:
+#       - name: nginx
+#         image: nginx:1.14.2
+#         ports:
+#         - containerPort: 80
+#         resources:
+#           requests:
+#             memory: 500m
+#             CPU: 500m
+
+# Al hacer esto se hace el despligue y sale ok, sin embargo si reviso los pods no salen
+#   kubectl get pods -n res-quote
+#   No resources found in res-quote namespace.
+
+# reviso el deployment solo sale un mensaje de error pero no da mayor info
+#   kubectl get deployments.apps -n res-quote
+#   NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+#   quotas-test   0/3     0            0           43s
+#   
+#   kubectl describe deployments.apps quotas-test -n res-quote
+#   Name:                   quotas-test
+#   Namespace:              res-quote
+#   CreationTimestamp:      Tue, 27 Aug 2024 17:20:28 -0500
+#   Labels:                 app=backend
+#   Annotations:            deployment.kubernetes.io/revision: 2
+#   Selector:               app=backend
+#   Replicas:               3 desired | 0 updated | 0 total | 0 available | 4 unavailable
+#   StrategyType:           RollingUpdate
+#   MinReadySeconds:        0
+#   RollingUpdateStrategy:  25% max unavailable, 25% max surge
+#   Pod Template:
+#     Labels:  app=backend
+#     Containers:
+#      nginx:
+#       Image:      nginx:1.14.2
+#       Port:       80/TCP
+#       Host Port:  0/TCP
+#       Requests:
+#         cpu:         500
+#         memory:      500
+#       Environment:   <none>
+#       Mounts:        <none>
+#     Volumes:         <none>
+#     Node-Selectors:  <none>
+#     Tolerations:     <none>
+#   Conditions:
+#     Type             Status  Reason
+#     ----             ------  ------
+#     Progressing      True    NewReplicaSetCreated
+#     Available        False   MinimumReplicasUnavailable
+#     ReplicaFailure   True    FailedCreate
+#   OldReplicaSets:    quotas-test-78d67bff79 (0/3 replicas created)
+#   NewReplicaSet:     quotas-test-66664db54f (0/1 replicas created)
+#   Events:
+#     Type    Reason             Age   From                   Message
+#     ----    ------             ----  ----                   -------
+#     Normal  ScalingReplicaSet  57s   deployment-controller  Scaled up replica set quotas-test-78d67bff79 to 3
+##     Normal  ScalingReplicaSet  44s   deployment-controller  Scaled up replica set quotas-test-66664db54f to 1
+#
+## Reviso el replicaSet y hago luego un describe de este
+#
+#    kubectl describe deployments.apps quotas-test -n res-quote
+#    Name:                   quotas-test
+#    Namespace:              res-quote
+#    CreationTimestamp:      Tue, 27 Aug 2024 17:20:28 -0500
+#    Labels:                 app=backend
+#    Annotations:            deployment.kubernetes.io/revision: 2
+#    Selector:               app=backend
+#    Replicas:               3 desired | 0 updated | 0 total | 0 available | 4 unavailable
+#    StrategyType:           RollingUpdate
+#    MinReadySeconds:        0
+#    RollingUpdateStrategy:  25% max unavailable, 25% max surge
+#    Pod Template:
+#      Labels:  app=backend
+#      Containers:
+#       nginx:
+#        Image:      nginx:1.14.2
+#        Port:       80/TCP
+#        Host Port:  0/TCP
+#        Requests:
+#          cpu:         500
+#          memory:      500
+#        Environment:   <none>
+#        Mounts:        <none>
+#      Volumes:         <none>
+#      Node-Selectors:  <none>
+#      Tolerations:     <none>
+#    Conditions:
+#      Type             Status  Reason
+#      ----             ------  ------
+#      Progressing      True    NewReplicaSetCreated
+#      Available        False   MinimumReplicasUnavailable
+#      ReplicaFailure   True    FailedCreate
+#    OldReplicaSets:    quotas-test-78d67bff79 (0/3 replicas created)
+#    NewReplicaSet:     quotas-test-66664db54f (0/1 replicas created)
+#    Events:
+#      Type    Reason             Age   From                   Message
+#      ----    ------             ----  ----                   -------
+#      Normal  ScalingReplicaSet  57s   deployment-controller  Scaled up replica set quotas-test-78d67bff79 to 3
+#      Normal  ScalingReplicaSet  44s   deployment-controller  Scaled up replica set quotas-test-66664db54f to 1
+
+
+# como podemos observar allí sale el mensaje que ME FALTA DEFINIR LOS LIMITS EN MI MANIFIESTO
+
+# corrijo y agrego en la config los limits, despliego y reviso nuevamente, ahora sale el mensaje de que excede la quota
+
+# Error creating: pods "quotas-test-7d4f7bfbbf-mnjgd" is forbidden: exceeded quota: res-quota-demo, requested: limits.cpu=500,requests.cpu=500, used: limits.cpu=0,requests.cpu=0, limited: limits.cpu=2,requests.cpu=1
+#  Warning  FailedCreate  43s               replicaset-controller  Error creating: pods "quotas-test-7d4f7bfbbf-hfxrd" is forbidden: exceeded quota: res-quota-demo, requested: limits.cpu=500,requests.cpu=500, used: limits.cpu=0,requests.cpu=0, limited: limits.cpu=2,requests.cpu=1

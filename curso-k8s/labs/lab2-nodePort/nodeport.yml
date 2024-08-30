@@ -1,0 +1,44 @@
+#a este servicio lo etiquetare como backend para no interferir con el servico antes creado que tenia la etiqueta front
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodeport-test
+  labels:
+    app: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+---
+#por defecto el servicio se crea cluster ip
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-back-svc
+  labels:
+    app: backend
+spec:
+  type: NodePort #al usar nodePort el mismo crear el clusterip tambien
+  selector:
+    app: backend #aqui coloco el mismo de label para que el service busque los pod de ese label
+  ports:
+  - name: my-backend-srv
+    protocol: TCP
+    port: 8080 #El puerto con el que escuchara el servicio
+    targetPort: 80 # elpuerto que corre el container
+
+
+### NO MATARSE PORQ NO COGE LA IP TOCA HACER PORTFORWARD

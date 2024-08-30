@@ -1,0 +1,39 @@
+#se crea un contenedor con go para probar si sirve la app que creamos en el main.go
+
+docker run --rm -dti -v $PWD:/go --net host --name golang golang bash
+
+#el dti lo que hace es ponerla a correr en background el -v pues es el volumen
+docker build -t k8s-go-app .
+docker run -d -p 9091:9090 --name <nombre_contenedor> <imagen>
+
+#eliminar un contendor corriendo
+docker rm -fv  <container_id/name>
+#cuando son imagenes son locales se usa pull policy ifNotPresent
+
+#para subir la imagen de local al minikube hacer: (YA DEBE APARECER EN DCOKER IMAGES)
+minikube image load <NOMBRE_IMAGEN>
+
+#port-forward a pod
+kubectl port-forward [POD_NAME] [PUERTO_TU_PC]:[PUERTO_SERVICIO]
+
+#port-forward a servicio
+kubectl port-forward service/[SERVICE_NAME] [PUERTO_TU_PC]:[PUERTO_SERVICIO]
+
+#Crear pod de rapidez
+kubectl run --rm -ti pod-efimero --image=nginx:alpine -- sh
+
+
+#namespace
+kubectl get namespaces
+
+#revisar todo lo que hay en el namespace
+kubectl get all -n kube-public
+
+#crear un pod normal en un namespace
+kubectl run pod-efimero --image=<IMAGEN> --namespace <NOMBRE_NAMESPACE>
+
+#Validar el replicaSet
+kubectl describe rs <NOMBRE_REPLICA_SET> -n <NOMBRE_NAMESPACE>
+
+#Revisar mensajes de error en el deployment por la quota y otra info
+ k8s get deployment.apps limited-test -n limited -o yaml

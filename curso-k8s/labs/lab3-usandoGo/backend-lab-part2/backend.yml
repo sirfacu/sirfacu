@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend-lab3-docker
+        #image: k8s-go-app
+        image: k8s-go-app:v2 # para iteracion #4 del src/main.go CORS
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+
+---
+#por defecto el servicio se crea cluster ip
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-lab3-part2
+  labels:
+    app: backend
+spec:
+  selector:
+    app: backend #aqui coloco el mismo de label para que el service busque los pod de ese label
+  ports:
+  - name: backend-srv
+    protocol: TCP
+    port: 80 #El puerto con el que escuchara el servicio
+    targetPort: 9090 # elpuerto que corre el container
