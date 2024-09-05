@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: goproxy
+  labels:
+    app: goproxy
+spec:
+  containers:
+  - name: goproxy
+    image: goproxy/goproxy
+    ports:
+    - containerPort: 8080
+    readinessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 15 
+      periodSeconds: 10
+    livenessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 10
+
+# La explicacion del yaml indica que haremos un probe liveness tipo TCP centrarse en el liveness
+
+# esta prueba lo que hara es esperar 15segs para empezar luego cada 10segs a revisar el puerto 8080
+
+
+# al levantarlo y esperar efectivamente si describo el pod saldra algo similar a esto:
+
+# Normal   Killing    14s                kubelet            Container goproxy failed liveness probe, will be restarted
+# Normal   Pulled     14s                kubelet            Successfully pulled image "goproxy/goproxy" in 834ms (834ms including waiting). Image size: 393357670 bytes.
+# Normal   Started    13s (x2 over 53s)  kubelet            Started container goproxy

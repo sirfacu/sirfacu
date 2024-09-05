@@ -308,3 +308,8 @@ GRANT SELECT, INSERT, UPDATE ON goals.* TO 'jsmoreno'@'%';
 
 
 
+select User from mysql.user;
+
+ALTER USER 'macarrillo'@'%' IDENTIFIED BY '';
+
+

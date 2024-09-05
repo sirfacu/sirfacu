@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: probeReadiness
+  labels:
+    app: goproxy
+spec:
+  containers:
+  - name: probeReadiness
+    image: goproxy/goproxy
+    ports:
+    - containerPort: 8080
+    readinessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 15 
+      periodSeconds: 10
+    livenessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 10
+
+# La explicacion del yaml indica que haremos un probe liveness tipo Readiness
+# es normal que el readiness sea igual al liveness
+
+
+# El comportamiento deseado será que falle ya que la imagen esta creada para que despues de 10 segundos coloque un 500 en la respuesta
+# y se reinicie al describir el pod lo podemos ver
+
+
+
+# Si no soluciono el problema el pod quedará marcado como backoff es decir que k8s intento e intento pero nunca pudo subir el pod

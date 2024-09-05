@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-vars-demo
+spec:
+  containers:
+  - name: env-vars-contenedor
+    image: nginx
+    env:
+    - name: VARIABLE_UNO
+      value: "Variable de prueba"
+    - name: VARIABLE_DOS
+      value: "dulcesito"
+    

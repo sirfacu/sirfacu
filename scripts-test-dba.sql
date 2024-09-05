@@ -235,6 +235,7 @@ GRANT SELECT, INSERT, UPDATE ON goals.* TO 'jsmoreno'@'%';
 
 
 
+SELECT user FROM mysql.user WHERE USER like 'user_%'
 
 
 
