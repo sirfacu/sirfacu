@@ -54,7 +54,6 @@ spec:
         volumeMounts:
           - mountPath: "/var/lib/mysql"
             name: mysql-data-vol
-      
 #de aqui en adelante montaremos el PV al pod
       volumes:
         - name: mysql-data-vol
