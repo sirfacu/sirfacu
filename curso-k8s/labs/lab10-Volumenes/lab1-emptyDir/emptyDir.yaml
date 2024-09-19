@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pd
+spec:
+  containers:
+  - image: nginx:alpine
+    name: test-container
+    volumeMounts:
+    - mountPath: /var/log/nginx
+      name: logs-vol
+  volumes:
+  - name: logs-vol
+    emptyDir:
+      sizeLimit: 20Mi
+
+      # La idea era hacer un montaje de este volumen en el POD luego escribir un archivo en la ruta
+      # entrar al contenedor y matar el proceso nginx forzando un reinicio y un levantamiento de un contenedor
+      # nuevo.
+
+      #Como resultado de esto vemos que mientras no eliminemos el pod la info que guarde en ese volumen
+      # Sera "persistente" esto lo digo porq si muere el pod murio el volumen tambien

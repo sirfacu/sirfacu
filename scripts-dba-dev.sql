@@ -283,33 +283,28 @@ usuario user_management prodzb%VLjP2H27Kx&bYcopielo pa borrarlo por fa
 GRANT SELECT ON goals.* TO 'jpolanco'@'%';
 GRANT SELECT ON goals.* TO 'mrodriguez'@'%';
 
-
-
 ------ 
 
 GRANT SELECT ON adminhr.* TO 'kdromero'@'%';
-
-
 
 --- IN-741
 
 GRANT DELETE ON adminhr.ubits_user_role TO 'user_management'@'%';
 GRANT DELETE ON adminhr.ubits_user_auth0_role TO 'user_management'@'%';
 
-
-
 ----IN-833
 
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'scbustos'@'%';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'jsmoreno'@'%';
 
-
-
-
-
-
 select User from mysql.user;
 
 ALTER USER 'macarrillo'@'%' IDENTIFIED BY '';
+
+
+
+
+
+
 
 

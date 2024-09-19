@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sc-pvc
+spec:
+  storageClassName: standard #validar el que tiene el cluster como es minikube sale estandar
+  #para validarlo ejecutamos k8s get sc
+  #  k8s get sc
+  #  NAME                 PROVISIONER                RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+  #  standard (default)   k8s.io/minikube-hostpath   Delete          Immediate           false                  25d
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 25Gi # aqui ponemos un valor que no existe entonces hacemos apply y validamos que sale
+
+  #k8s apply -f storage-class.yaml 
+  #persistentvolumeclaim/sc-pvc created
+  #
+  #k8s get pvc
+  #NAME     STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+  #sc-pvc   Bound    pvc-d3fc0fed-45b7-4a21-8c52-44da8fd76e78   25Gi       RWO            standard       <unset> 
+  # como vemos ese creo el PVC sin problema y vemos que esta asociado a un PV que se creo automaticamente
+  #esto es lo que hace el aprovisionamiento de forma dinámica 
+
+  #Ahora hacemos un describe sobre el PV creado y vemos las opciones y como lo creo y donde se creo el PV
+  
+  # k8s describe pv
+  #Name:            pvc-d3fc0fed-45b7-4a21-8c52-44da8fd76e78
+  #Labels:          <none>
+  #Annotations:     hostPathProvisionerIdentity: 87e20ffa-a964-4a10-944c-d4684b7e42f5
+  #                 pv.kubernetes.io/provisioned-by: k8s.io/minikube-hostpath
+  #Finalizers:      [kubernetes.io/pv-protection]
+  #StorageClass:    standard
+  #Status:          Bound
+  #Claim:           default/sc-pvc
+  #Reclaim Policy:  Delete
+  #Access Modes:    RWO
+  #VolumeMode:      Filesystem
+  #Capacity:        25Gi
+  #Node Affinity:   <none>
+  #Message:         
+  #Source:
+  #    Type:          HostPath (bare host directory volume)
+  #    Path:          /tmp/hostpath-provisioner/default/sc-pvc
+  #    HostPathType:  
+  #Events:            <none>

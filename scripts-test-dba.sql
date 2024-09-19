@@ -230,14 +230,11 @@ GRANT SELECT, INSERT, UPDATE ON goals.* TO 'scbustos'@'%';
 GRANT SELECT ON bitnami_moodle.* TO 'scbustos'@'%';
 GRANT SELECT, INSERT, UPDATE ON goals.* TO 'jsmoreno'@'%';
 
-
-
-
-
-
 SELECT user FROM mysql.user WHERE USER like 'user_%'
 
 
+--- IN-937
+alter user 'crrincon' identified by 'pHd!k1&KF^CK-mSZ'
 
 
 
@@ -251,48 +248,165 @@ SELECT user FROM mysql.user WHERE USER like 'user_%'
 
 
 
+SHOW GRANTS FOR user_analitycs@'%';
+GRANT USAGE ON *.* TO 'user_analitycs'@'%'
+GRANT SELECT ON `talentdb`.* TO 'user_analitycs'@'%'
+
+SHOW GRANTS FOR user_api_questionnaire@'%';
+GRANT USAGE ON *.* TO 'user_api_questionnaire'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, ALTER ON `questionnaire`.* TO 'user_api_questionnaire'@'%'
 
 
+SHOW GRANTS FOR user_assessments@'%';
+GRANT USAGE ON *.* TO 'user_assessments'@'%'
+GRANT SELECT ON `talendb`.* TO 'user_assessments'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, TRIGGER ON `talentdb`.* TO 'user_assessments'@'%' WITH GRANT OPTION
+
+SHOW GRANTS FOR user_auth0@'%';
+GRANT USAGE ON *.* TO 'user_auth0'@'%'
+GRANT SELECT, INSERT, UPDATE ON `adminhr`.* TO 'user_auth0'@'%'
 
 
+SHOW GRANTS FOR user_centralization@'%';
+GRANT PROCESS, EVENT ON *.* TO 'user_centralization'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, TRIGGER ON `adminhr`.* TO 'user_centralization'@'%' WITH GRANT OPTION
+GRANT ALL PRIVILEGES ON `adminhr`.`city` TO 'user_centralization'@'%' WITH GRANT OPTION
+GRANT ALL PRIVILEGES ON `adminhr`.`country` TO 'user_centralization'@'%' WITH GRANT OPTION
 
 
+SHOW GRANTS FOR user_crawlers@'%';
+GRANT USAGE ON *.* TO 'user_crawlers'@'%'
+GRANT SELECT, INSERT, UPDATE, ALTER ON `bitnami_moodle`.* TO 'user_crawlers'@'%'
+
+SHOW GRANTS FOR user_credentials@'%';
+GRANT USAGE ON *.* TO 'user_credentials'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON `bitnami_moodle`.* TO 'user_credentials'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON `bitnami_moodle_tars`.* TO 'user_credentials'@'%'
 
 
+SHOW GRANTS FOR user_datapipeline@'%';
+GRANT USAGE ON *.* TO 'user_datapipeline'@'%'
+GRANT SELECT ON `bitnami_moodle`.* TO 'user_datapipeline'@'%'
+GRANT SELECT ON `prod_logs_moodle`.* TO 'user_datapipeline'@'%'
+
+SHOW GRANTS FOR user_etl_360_analitycs@'%';
+GRANT USAGE ON *.* TO 'user_etl_360_analitycs'@'%'
+GRANT SELECT ON `360_assessments`.* TO 'user_etl_360_analitycs'@'%'
+
+SHOW GRANTS FOR user_goals@'%';
+GRANT USAGE ON *.* TO 'user_goals'@'%'
+GRANT SELECT, INSERT, DELETE, REFERENCES, ALTER ON `adminhr`.* TO 'user_goals'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, ALTER ON `goals`.* TO 'user_goals'@'%'
+GRANT DELETE ON `goals`.`user_has_cycle` TO 'user_goals'@'%'
 
 
+SHOW GRANTS FOR user_intranalytics_pipe@'%';
+GRANT USAGE ON *.* TO 'user_intranalytics_pipe'@'%'
+GRANT SELECT, INSERT, UPDATE ON `adminhr`.* TO 'user_intranalytics_pipe'@'%'
+GRANT SELECT, INSERT, UPDATE ON `talentdb`.* TO 'user_intranalytics_pipe'@'%'
+GRANT SELECT, INSERT, UPDATE ON `learning_hub`.* TO 'user_intranalytics_pipe'@'%'
+GRANT SELECT, INSERT, UPDATE ON `bitnami_moodle`.* TO 'user_intranalytics_pipe'@'%'
 
 
+SHOW GRANTS FOR user_lambda_downgrade@'%';
+GRANT USAGE ON *.* TO 'user_lambda_downgrade'@'%'
+GRANT SELECT, DELETE ON `adminhr`.`ubits_user_auth0_role` TO 'user_lambda_downgrade'@'%'
+GRANT SELECT ON `adminhr`.`location` TO 'user_lambda_downgrade'@'%'
+GRANT SELECT, INSERT, DELETE ON `adminhr`.`ubits_user_role` TO 'user_lambda_downgrade'@'%'
+GRANT SELECT ON `adminhr`.`ubits_role` TO 'user_lambda_downgrade'@'%'
+GRANT SELECT ON `adminhr`.`company` TO 'user_lambda_downgrade'@'%'
+GRANT SELECT ON `adminhr`.`ubits_user` TO 'user_lambda_downgrade'@'%'
+GRANT SELECT, DELETE ON `bitnami_moodle`.`mdl_role_assignments` TO 'user_lambda_downgrade'@'%'
+
+SHOW GRANTS FOR user_learning@'%';
+GRANT SELECT, INSERT, UPDATE, DROP, ALTER ON *.* TO 'user_learning'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON `bitnami_moodle`.* TO 'user_learning'@'%'
 
 
+SHOW GRANTS FOR user_learning_hub@'%';
+GRANT USAGE ON *.* TO 'user_learning_hub'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, TRIGGER ON `learning_hub`.* TO 'user_learning_hub'@'%' WITH GRANT OPTION
+
+SHOW GRANTS FOR learning_map_user@'%';
+GRANT EVENT ON *.* TO 'learning_map_user'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, TRIGGER ON `learning_map_test_2`.* TO 'learning_map_user'@'%' WITH GRANT OPTION
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, TRIGGER ON `learning_map_test`.* TO 'learning_map_user'@'%' WITH GRANT OPTION
+
+SHOW GRANTS FOR user_liquibase@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, REFERENCES, ALTER, EXECUTE, CREATE ROUTINE, ALTER ROUTINE ON *.* TO 'user_liquibase'@'%'
+
+SHOW GRANTS FOR user_lms_creator@'%';
+GRANT USAGE ON *.* TO 'user_lms_creator'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, ALTER ON `lms_creator`.* TO 'user_lms_creator'@'%'
+
+SHOW GRANTS FOR user_lxp_lms_service@'%';
+GRANT USAGE ON *.* TO 'user_lxp_lms_service'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, TRIGGER ON `bitnami_moodle`.* TO 'user_lxp_lms_service'@'%' WITH GRANT OPTION
+
+SHOW GRANTS FOR user_lxp_lms_service_read@'%';
+GRANT USAGE ON *.* TO 'user_lxp_lms_service_read'@'%'
+GRANT SELECT ON `bitnami_moodle`.* TO 'user_lxp_lms_service_read'@'%'
+
+SHOW GRANTS FOR user_management@'%';
+GRANT USAGE ON *.* TO 'user_management'@'%'
+GRANT SELECT, INSERT, UPDATE ON `adminhr`.* TO 'user_management'@'%'
+GRANT DELETE ON `adminhr`.`ubits_user_role` TO 'user_management'@'%'
+GRANT DELETE ON `adminhr`.`ubits_user_auth0_role` TO 'user_management'@'%'
 
 
+SHOW GRANTS FOR user_middleware@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE ROUTINE, ALTER ROUTINE, LOAD FROM S3, SELECT INTO S3, INVOKE LAMBDA ON *.* TO 'user_middleware'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, ALTER, EXECUTE ON `bitnami_moodle`.* TO 'user_middleware'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, ALTER, EXECUTE ON `bitnami_moodle_tars`.* TO 'user_middleware'@'%'
+GRANT SELECT ON `mysql`.`proc` TO 'user_middleware'@'%'
+
+SHOW GRANTS FOR user_middlware_reader@'%';
+GRANT USAGE ON *.* TO 'user_middlware_reader'@'%'
+GRANT EXECUTE ON `mysql`.* TO 'user_middlware_reader'@'%'
+GRANT SELECT, EXECUTE ON `bitnami_moodle_tars`.* TO 'user_middlware_reader'@'%'
+GRANT SELECT, EXECUTE ON `bitnami_moodle`.* TO 'user_middlware_reader'@'%'
+GRANT SELECT ON `prod_logs_moodle`.* TO 'user_middlware_reader'@'%'
+GRANT SELECT ON `mysql`.`proc` TO 'user_middlware_reader'@'%'
+
+SHOW GRANTS FOR user_migration_adminhr@'%';
+GRANT USAGE ON *.* TO 'user_migration_adminhr'@'%'
+GRANT SELECT, INSERT, UPDATE, CREATE, INDEX, ALTER ON `adminhr`.* TO 'user_migration_adminhr'@'%'
+GRANT SELECT, INSERT, UPDATE, ALTER ON `bitnami_moodle`.* TO 'user_migration_adminhr'@'%'
 
 
+SHOW GRANTS FOR user_moodle@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, TRIGGER, LOAD FROM S3, SELECT INTO S3, INVOKE LAMBDA ON *.* TO 'user_moodle'@'%' WITH GRANT OPTION
 
 
+SHOW GRANTS FOR user_moodle_reader@'%';
+GRANT USAGE ON *.* TO 'user_moodle_reader'@'%'
+GRANT SELECT, EXECUTE ON `bitnami_moodle`.* TO 'user_moodle_reader'@'%'
+GRANT SELECT ON `prod_logs_moodle`.* TO 'user_moodle_reader'@'%'
+GRANT EXECUTE ON PROCEDURE `bitnami_moodle`.`getcompulsorycourseadvancepercentage` TO 'user_moodle_reader'@'%'
+GRANT EXECUTE ON PROCEDURE `bitnami_moodle`.`getcompanyvalidities` TO 'user_moodle_reader'@'%'
 
 
+SHOW GRANTS FOR user_opensearch@'%';
+GRANT USAGE ON *.* TO 'user_opensearch'@'%'
+GRANT SELECT ON `bitnami_moodle`.* TO 'user_opensearch'@'%'
 
 
+SHOW GRANTS FOR user_orgchart@'%';
+GRANT USAGE ON *.* TO 'user_orgchart'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE ON `adminhr`.* TO 'user_orgchart'@'%'
+
+SHOW GRANTS FOR user_tars@'%';
+GRANT USAGE ON *.* TO 'user_tars'@'%'
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, TRIGGER ON `bitnami_moodle_tars`.* TO 'user_tars'@'%' WITH GRANT OPTION
 
 
+SHOW GRANTS FOR user_users_sync@'%';
+GRANT USAGE ON *.* TO 'user_users_sync'@'%'
+GRANT SELECT, INSERT, UPDATE ON `adminhr`.* TO 'user_users_sync'@'%'
+GRANT SELECT, INSERT, UPDATE ON `bitnami_moodle`.* TO 'user_users_sync'@'%'
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+SHOW GRANTS FOR ubits_api_user@'%';
+SHOW GRANTS FOR ubits_enrollment_user@'%';
+SHOW GRANTS FOR ubits_enrol_massive@'%';
+SHOW GRANTS FOR ubits_learning_map_service@'%';

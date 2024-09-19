@@ -36,4 +36,15 @@ kubectl run pod-efimero --image=<IMAGEN> --namespace <NOMBRE_NAMESPACE>
 kubectl describe rs <NOMBRE_REPLICA_SET> -n <NOMBRE_NAMESPACE>
 
 #Revisar mensajes de error en el deployment por la quota y otra info
- k8s get deployment.apps limited-test -n limited -o yaml
+kubectl get deployment.apps limited-test -n limited -o yaml
+
+#Creacion de secretos
+#kubectl create secret <TIPO_SECRETO> <NOMBRE_SECRETO> --from-file=<path/secret/file>
+kubectl create secret generic example1 --from-file=./secret-files/example1
+#obtener el secreto en base64
+kubectl get secrets example1 -o yaml
+#Decoding el valor
+echo "ZGJfcGFzc3dvcmQ9MzJraDRqcjMyMTMxMmpraGc4MzAjJApkYl91c2VyPXVzdWFyaW9fc2VjcmV0bw==" | base64 --decode
+
+#herramienta para sustituir variables de entorno
+envsubst < archivo_reemplazar > archivo_sustituido

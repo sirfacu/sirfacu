@@ -38,7 +38,6 @@ function restoreFiles(){
     rm -rf "Pulumi.$TEAM.yaml"
     echo -e "$VERDE" "Removing tmp files and Pulumi.$TEAM.yaml file $RESET"
 }
-# this function decrypt an already file encrypted with sops
 # this will create as many files as configs<=>APPNAME exist in the paramsSecure.json
 # in the folder tmp-files ending with APP_NAME-conf.json the APPNAME can't be use "-"
 # because parameter store doesn't accept it.

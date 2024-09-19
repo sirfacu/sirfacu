@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-volume-l3
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/test"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-volume-selec
+  labels:
+    mysql: ready
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mysql"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pv-claim-selec
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi # Validar siempre que consumamos el total del pv ya que ningun otro lo podrá usar
+  selector: #con estas sentencias le digo al PVC cual es el PV que debe tomar es decir el que tenga la 
+            # label mysql: ready
+    matchLabels: 
+      mysql: ready
+#como en este manifiesto no hay definido el PV entonces k8s busca un PV que se pueda usar con el tamaño
+#k8s get pv
+#NAME              CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM                    STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+#pv-volume-l3      10Gi       RWO            Retain           Available                            manual         <unset>                          6s
+#pv-volume-selec   5Gi        RWO            Retain           Bound       default/pv-claim-selec   manual         <unset>                          6s
+
+#k8s get pvc
+#NAME             STATUS   VOLUME            CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+#pv-claim-selec   Bound    pv-volume-selec   5Gi        RWO            manual         <unset>                 8s

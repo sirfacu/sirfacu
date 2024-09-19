@@ -1,0 +1,18 @@
+#Este archivo no hace parte de emptyDir solo se usa para validar como crear un PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-volume-l1
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/test"
+# k8s get pv
+#NAME        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+#pv-volume   10Gi       RWO            Retain           Available           manual         <unset>                          10s
