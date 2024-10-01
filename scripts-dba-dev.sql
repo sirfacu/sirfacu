@@ -299,12 +299,21 @@ GRANT SELECT, INSERT, UPDATE ON goals.* TO 'jsmoreno'@'%';
 
 select User from mysql.user;
 
-ALTER USER 'macarrillo'@'%' IDENTIFIED BY '';
+ALTER USER 'macarrillo'@'%' IDENTIFIED BY 'temporal123';
+
+
+--- IN-946
+
+CREATE USER 'user_orgchart_v2'@'%' IDENTIFIED BY 'M$df%DtOX%VHqP2z';
+GRANT SELECT ON adminhr.ubits_user TO 'user_orgchart_v2'@'%';
+GRANT SELECT ON adminhr.location TO 'user_orgchart_v2'@'%';
+GRANT ALTER ON adminhr.ubits_user TO 'user_orgchart_v2'@'%';
+REVOKE ALTER ON adminhr.ubits_user FROM 'user_orgchart_v2'@'%';
+
+show grants for 'user_orgchart_v2'@'%' ;
 
 
 
 
 
-
-
-
+select count(id) from adminhr.ubits_user uu

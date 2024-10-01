@@ -1,4 +1,4 @@
-    mongo -u root -p $PWD_DB --eval 'db = db.getSiblingDB("centralization"); db.getUsers()' > users-dbs-centralization.js
+mongo -u root -p $PWD_DB --eval 'db = db.getSiblingDB("centralization"); db.getUsers()' > users-dbs-centralization.js
 db.getCollectionNames()
 #listar la BD
 DB=$(mongo -u root -p $PWD_DB --quiet --eval "db.adminCommand('listDatabases').databases.map(d => d.name).join(',')" | sed 's/\[//;s/\]//;s/\"//g')
@@ -30,3 +30,5 @@ for DB_NAME in $DB; do
 done
 
 cd $TMP_FOLDER
+
+db= db.getSiblingDB("lxp_strapi_cms"); db.createUser({user: "lxp-test",pwd: "t3MP0R4lpWD",roles: [{ role: "readWrite", db: "lxp_strapi_cms"}]);

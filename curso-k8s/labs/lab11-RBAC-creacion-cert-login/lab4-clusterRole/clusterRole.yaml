@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-pod-reader
+rules:
+- apiGroups: [""] #validar con k8s api-resources los apiGroups
+  resources: ["pods"]
+  verbs: ["get", "watch", "list" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-reader-binding
+subjects:
+- kind: User
+  name: sirfacu
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-pod-reader
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cm-namespace
+  labels:
+    app: development
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cm-role
+  namespace: cm-namespace
+rules:
+- apiGroups: [""] #validar con k8s api-resources los apiGroups
+  resources: ["configmaps"]
+  verbs: ["get", "watch", "patch" , "list", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cm-role
+  namespace: cm-namespace
+subjects:
+- kind: User
+  name: sirfacu
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: cm-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-vars
+  namespace: cm-namespace
+  labels:
+    app: front
+data:
+  DB_HOST: dev.host.local
+  DB_USER: dev_user

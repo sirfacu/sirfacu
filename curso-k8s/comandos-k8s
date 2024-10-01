@@ -48,3 +48,55 @@ echo "ZGJfcGFzc3dvcmQ9MzJraDRqcjMyMTMxMmpraGc4MzAjJApkYl91c2VyPXVzdWFyaW9fc2Vjcm
 
 #herramienta para sustituir variables de entorno
 envsubst < archivo_reemplazar > archivo_sustituido
+
+#nos dice que usuario somos
+k8s config current-context
+
+#para validar configuraciones del cluster
+k8s config view
+
+#Comando para seterar el cluster 
+kubectl config set-cluster sirfacuk8s --server=https://192.168.49.2:8443 --certificate-authority=/ca.crt
+
+#Agregamos credenciales para lordfacu con la llave y certificados creados
+kubectl config set-credentials lordfacu --client-certificate=/test/sirfacu.crt  --client-key=/test/sirfacu.key 
+#Output: 
+#User "lordfacu" set.
+
+#Configuramos el contexto en el cluster NOMBRE_CONFIGURABLE
+kubectl config set-context lordfacu --cluster sirfacuk8s --user=lordfacu
+#Output: 
+#Context "lordfacu" created.
+
+#Configuramos kubectl para que tome las credenciales configuradas de k8s
+kubectl config use-context lordfacu
+#Output: 
+#Switched to context "lordfacu".
+
+#validar que RBAC esta activo
+k8s cluster-info dump | grep authorization
+# Output:
+#"--authorization-mode=Node,RBAC",
+
+# listar nombre para los apiGroups
+k8s api-resources
+
+# eliminar contextos creados
+# 1. vlaidar cuales hay
+#k8s config get-contexts
+#CURRENT   NAME             CLUSTER      AUTHINFO       NAMESPACE
+#          ci-dev-context   minikube     minikube       ci-dev
+#          juanito          juanitok8s   user_juanito   
+#          lordfacu         sirfacuk8s   lordfacu       
+#          martin           martink8s    user_martin    
+#*         minikube         minikube     minikube       default
+#          pepito           pepitok8s    user_pepito    
+#          user_juanito     sirfacuk8s   user_juanito   
+#          user_martin      sirfacuk8s   user_martin    
+#          user_pepito      sirfacuk8s   user_pepito    
+
+# 2. Eliminarlos
+kubectl config delete-context user_sirfacu-test
+kubectl config unset users.NOMBRE_USUARIO
+
+k8s apply -f punto3.yaml --kubeconfig=punto1.yam

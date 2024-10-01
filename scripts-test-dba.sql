@@ -410,3 +410,55 @@ SHOW GRANTS FOR ubits_api_user@'%';
 SHOW GRANTS FOR ubits_enrollment_user@'%';
 SHOW GRANTS FOR ubits_enrol_massive@'%';
 SHOW GRANTS FOR ubits_learning_map_service@'%';
+
+--- IN-946
+CREATE USER 'user_orgchart_v2'@'%' IDENTIFIED BY 'M$df%DtOX%VHqP2z';
+GRANT SELECT ON adminhr.ubits_user TO 'user_orgchart_v2'@'%';
+GRANT SELECT ON adminhr.location TO 'user_orgchart_v2'@'%';
+
+
+
+
+
+--- IN-946 PARA PROD
+CREATE USER 'user_orgchart_v2'@'%' IDENTIFIED BY 'NXC%uIP4r1@c0c-=';
+GRANT SELECT ON adminhr.ubits_user TO 'user_orgchart_v2'@'%';
+GRANT SELECT ON adminhr.location TO 'user_orgchart_v2'@'%';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+show grants for 'user_orgchart_v2'@'%' ;
+
+
+
+
+
+
+
+
+
+
+
+
