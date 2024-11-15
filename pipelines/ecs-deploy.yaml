@@ -1,0 +1,292 @@
+image:
+  name: 824404647578.dkr.ecr.us-east-1.amazonaws.com/ubits-dev-devops-ecs-ecr:node-21
+  aws:
+    access-key: $DEV_AWS_ACCESS_KEY_ID
+    secret-key: $DEV_AWS_SECRET_ACCESS_KEY
+
+definitions:
+  caches:
+    node-team: node_modules
+    node-squadpoc: node_modules
+    node-dev: node_modules
+    node-test: node_modules
+    node-prod: node_modules
+  steps:
+    - step: &set-env
+        name: Configurando variables de entorno
+        clone:
+          enabled: false
+        script:
+          - set -a
+          - source set_env.sh
+          - ENVIRONMENT=${ENVIRONMENT//-/_}
+          - echo "AWS_ACCESS_KEY_ID=\${"${ENVIRONMENT^^}"_AWS_ACCESS_KEY_ID}" >> set_env.sh
+          - echo "AWS_SECRET_ACCESS_KEY=\${"${ENVIRONMENT^^}"_AWS_SECRET_ACCESS_KEY}" >> set_env.sh
+          - echo "AWS_DEFAULT_REGION=\${"${ENVIRONMENT^^}"_AWS_DEFAULT_REGION}" >> set_env.sh
+          - echo "ECR_URI=\${"${ENVIRONMENT^^}"_ACCOUNT_ID}".dkr.ecr.\${"${ENVIRONMENT^^}"_AWS_DEFAULT_REGION}".amazonaws.com"  >> set_env.sh
+          - echo "AWS_ACCOUNT_ID=\${"${ENVIRONMENT^^}"_ACCOUNT_ID}" >> set_env.sh
+          - echo "REPO=\${"${ENVIRONMENT^^}"_ECR}" >> set_env.sh
+        artifacts:
+          - set_env.sh
+
+    - step: &clear-caches
+        image: amazon/aws-cli
+        name: Clear caches
+        script:
+          - export AWS_ACCESS_KEY_ID=${DEV_AWS_ACCESS_KEY_ID}
+          - export AWS_SECRET_ACCESS_KEY=${DEV_AWS_SECRET_ACCESS_KEY}
+          - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 824404647578.dkr.ecr.us-east-1.amazonaws.com
+          - pipe: docker://824404647578.dkr.ecr.us-east-1.amazonaws.com/ubits-dev-devops-fg-ecs-ecr:clear-caches-v6
+            variables:
+              BITBUCKET_APP_KEY: $BITBUCKET_APP_KEY
+              BITBUCKET_APP_SECRET: $BITBUCKET_APP_SECRET
+              CACHES: ['node-${ENVIRONMENT//[-0-9]/}']
+        condition:
+          changesets:
+            includePaths:
+              # only if package.json file has changed
+              - 'package.json'
+
+
+    - step: &publish-sonarqube
+        name: Publish SonarQube
+        script:
+          - pipe: sonarsource/sonarqube-scan:1.1.0
+            variables:
+              SONAR_HOST_URL: ${SONAR_HOST_URL}
+              SONAR_TOKEN: ${SONAR_TOKEN}
+
+    - step: &install
+        name: Instalacion de NPM
+        script:
+          - set -a
+          - source set_env.sh
+          - npm install
+          - npm run build
+        artifacts:
+          - node_modules/**
+          - dist/**
+
+    - step: &build-push-image
+        name: Creacion y carga de imagen al ECR
+        image: amazon/aws-cli
+        caches:
+          - node
+        services:
+          - docker
+        script:
+          - set -a
+          - source set_env.sh
+          - BRANCH_NAME=${BITBUCKET_BRANCH//[\/\\ ]/-}
+          - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI/$REPO
+          - TAG=${ENVIRONMENT,,}-${APP_NAME,,}-${BRANCH_NAME,,}.${BITBUCKET_BUILD_NUMBER}
+          - echo TAG=$TAG >> set_env.sh
+          - docker build -t $TAG . $DOCKER_EXTRA_ARGS
+          - docker images
+          - echo -e "${CYAN} Se cargara la imagen a ${RESET}${AMARILLO}${ECR_URI}/${REPO}${RESET}${CYAN} con el nombre ${RESET}${VERDE}${TAG}${RESET}"
+          - docker tag $TAG $ECR_URI/$REPO:$TAG
+          - docker push $ECR_URI/$REPO:$TAG
+          
+
+        artifacts:
+          - set_env.sh
+
+    - step: &deploy
+        name: Despliegue de servicio ECS
+        script:
+          - set -a
+          - source set_env.sh
+          - TD_IMAGE_NAME=$ECR_URI/$REPO:$TAG
+          - TD_AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+          - ENV_AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
+          - |
+            if [ "$VAR_APM" == 'true' ]; then
+              echo -e "Se ha configurado el despliegue para usar "${VERDE} "APM" ${RESET}
+              cp pipe/task_definition_datadog.json taskDefinition.json
+            else
+              echo -e ${CYAN}"Se ha configurado el despliegue para"${RESET}${ROJO}" NO usar APM"${RESET}
+              cp pipe/task_definition_service.json taskDefinition.json
+            fi
+          - echo -e "${CYAN} Asignando definiciones en la task $RESET"
+          - for var in "${!TD_@}"; do echo -e "Variable a incluir "$ROJO$var$RESET; sed -i "s#{${var}}#${!var//&/\\&}#g" "taskDefinition.json"; done
+          - sed -i 's/\$//g' taskDefinition.json
+          - cat taskDefinition.json
+          
+          - |
+              > env.sh
+              for var in "${!ENV_@}"; do eval "echo ${var#ENV_}=${!var//&/\\&}" >> env.sh; done
+              echo \"environment\": $(cat env.sh | jq -R 'split("=") | {name: .[0], value: .[1:] | join("=")}' | jq -s '.') > vars.sh
+          - sed -i 's#\"environment\":\ \[\]#'"$(cat vars.sh | sed 's#&#\\&#g')"'#g' taskDefinition.json
+          - echo -e "Creando el servicio $VERDE" $TD_SERVICE_NAME "$RESET en el cluster :$ROJO" $CLUSTER_NAME "$RESET"
+          - cat taskDefinition.json
+          - aws ecs register-task-definition --cli-input-json file://taskDefinition.json
+          - aws ecs update-service --cluster "${CLUSTER_NAME}" --service "${TD_SERVICE_NAME}" --task-definition "${TD_SERVICE_NAME}" --force-new-deployment
+          
+        artifacts:
+          - set_env.sh
+          - taskDefinition.json
+
+    - step: &security-scan
+        name: Escaneo de secretos
+        script:
+          - pipe: atlassian/git-secrets-scan:0.4.3
+            variables:
+              FILES: '**/*.txt **/*.json **/*.yml **/*.properties **/*.env'
+
+    - step: &test-and-coverage
+        name: Ejecucion de test y coverage en el código
+        script:
+          - npm run test
+          - npm run coverage
+        artifacts:
+          - src/coverage/**
+
+    - step: &check-branch-source
+        name: Validación de branch master
+        clone:
+          enabled: false
+        script:
+          - 'if [ $BITBUCKET_BRANCH != "master" ]; then
+              echo "Branch $BITBUCKET_BRANCH is not master, deploy not allowed";
+              exit 1;
+            else
+              echo "Branch $BITBUCKET_BRANCH is master, deploy allowed";
+            exit 0;
+            fi'
+
+pipelines:
+  default:
+        - step:
+            name: Configurando variables globales
+            script:
+              - echo ENVIRONMENT=dev >> set_env.sh
+            artifacts:
+              - set_env.sh
+        - step: *set-env
+        - step: *security-scan
+        - step:
+            <<: *install
+            caches:
+              - node-dev
+        - step: *test-and-coverage
+  
+  custom:
+    poc:
+      - step:
+            name: Configurando variables globales
+            script:
+              - echo ENVIRONMENT=poc >> set_env.sh
+            artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-squadpoc
+      - step:
+          <<: *test-and-coverage
+          caches:
+            - node-poc
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to POC
+          deployment: poc
+        
+    team:
+      - variables:
+          - name: ENVIRONMENT
+            default: team-100
+            allowed-values:
+              - team-100
+              - team-101
+              - team-102
+              - team-103
+              - team-104
+              - team-105
+              - team-106
+              - team-107
+              - team-108
+              - team-109
+              - team-110
+              - team-111
+              - team-112
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-team
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to TEST
+          deployment: team
+
+  branches:
+    develop:
+      - step:
+          name: Configurando variables globales
+          script:
+            - echo ENVIRONMENT=dev >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-dev
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to Develop
+          deployment: dev
+
+
+    staging:
+      - step:
+          name: Configurando variables globales
+          script:
+            - echo ENVIRONMENT=test >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-test
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to Test
+          deployment: test
+
+
+    master:
+      - step:
+          name: Configurando variables globales
+          script:
+            - echo ENVIRONMENT=prod >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *check-branch-source
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-prod
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to Prod
+          deployment: prod
+          trigger: manual

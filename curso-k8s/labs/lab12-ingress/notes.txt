@@ -1,0 +1,5 @@
+en minikube usar el comando para habilitar el ingress-controller
+
+minikube addons enable ingress
+Para saber la ip que estaria usando y buscar en nuestro navegador hacemos
+minikube service ingress-nginx --url -n ingress-nginx

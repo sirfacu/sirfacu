@@ -1,0 +1,149 @@
+#file proxysql.cfg
+datadir="/var/lib/proxysql"
+errorlog="/var/lib/proxysql/proxysql.log"
+log={
+  log_query_source_ip = 1
+}
+admin_variables=
+{
+        admin_credentials="admin:admin"
+        mysql_ifaces="127.0.0.1:6032;/tmp/proxysql_admin.sock"
+}
+
+mysql_variables=
+{
+        threads=2
+  max_connections=10000
+  default_query_delay=0
+  default_query_timeout=360000
+  have_compress=true
+  poll_timeout=2000
+  interfaces="0.0.0.0:3306"
+  default_schema="information_schema"
+  stacksize=1048576
+  server_version="5.7.19"
+  connect_timeout_server=3000
+  monitor_history=600000
+  monitor_connect_interval=60000
+  monitor_ping_interval=10000
+  monitor_read_only_interval=1500
+  monitor_read_only_timeout=500
+  monitor_writer_is_also_reader=false
+  ping_interval_server_msec=120000
+  ping_timeout_server=500
+  commands_stats=true
+  sessions_sort=true
+  connect_retries_on_failure=10
+  mysql-log_unhealthy_connections=false
+  mysql-wait_timeout=300000
+  mysql-connection_max_age_ms=60000
+  mysql-free_connections_pct=2
+}
+
+
+# defines all the MySQL servers
+mysql_servers =
+(
+  {
+    address = "test-upgrade-db-cluster.cluster-cjqpovg6bsbu.us-east-1.rds.amazonaws.com"
+    port = 3306
+    hostgroup = 0
+    status = "ONLINE"
+    weight = 1
+    compression = 0
+    max_replication_lag = 10
+  }
+)
+
+# defines all the MySQL users
+mysql_users:
+(
+  { username = "1ntregrador_u5s3r" , password = "*38759A58442C8007D99548E6E53557ABF0634D14" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "admin_hr_db_user" , password = "*1091787DCBA999543A00D2B73D37F9860CE76C22" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "api_credentials" , password = "*C1F63E9314DE2E37DA97D969CB7BD2B57621814C" , default_hostgroup = 0 , active = 1, max_connections=500},
+  { username = "customer_success" , password = "*F1580EF3E90BCA14F0EFF0382EAF4AEFF477EDA7" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "datadog" , password = "*A93ED3F0BACFED99EC621763F28B975A08A77DC1" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "integrations_apis" , password = "*92EC18873A281004B35382614D83045C1A541543" , default_hostgroup = 1 , active = 1, max_connections=500 },
+  { username = "lxp_user" , password = "*5035F13D64BD76F32F250C08584C6EAF2A35A63D" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "moodle_dev_admin" , password = "*3E4560403115D36C72A8BD95D9C5B6D7756A2DB4" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "ubits_api_user" , password = "*6011789B5FFDD14D2A332A38E8E4C0B59B13D6FD" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "ubits_enrollment_user" , password = "*1C98A7DB1CF8C9EEBC525E0B04A31A3D5F1C3F6E" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "ubits_prod_moodle" , password = "*2A1B614733AFCAFEF800A7D6E5ABF892CCAEA447" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "ubits_workplace" , password = "*236F948992DE463DD37DCDA6401D388DC67160F0" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_crawlers" , password = "*BECF5E4066E600F898E41D3C5B41A8E3EEB3B890" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_datapipeline" , password = "*3EF831583CAF4B15C79C38B66043D0F22BF5E805" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "zoho_user" , password = "*B0DF895E6A8E0199AB9897D24F6478BC1778DADE" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "zoho_user_EMR" , password = "*683934A9FA33906A139FCDD8B76438FD8BCE6CD5" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_credentials" , password = "*ACC5535CDF78D6D97C49424BFDD0E93DE8FEC782" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_middleware" , password = "*9EB8BB80B68EA0D2A62D41E1DDE4A77EFF49C07D" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_learning" , password = "*8FF2DB6518A832ECEF69041361404C7A624B2D61" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_middlware_reader" , password = "*C53DE241AF3339E734DA18051DC5A6C749E9BCBB" , default_hostgroup = 1 , active = 1, max_connections=500 },
+  { username = "user_moodle_reader" , password = "*A544DC3688F1ED888C12371B5AA52AAA873F4E51" , default_hostgroup = 1 , active = 1, max_connections=500 },
+  { username = "user_moodle" , password = "*FDF9A3D4F14BD85B72D2426B93928A1BC65564A4" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_orgchart" , password = "*3B8BAEA02B97A54E7A09E15113B54EE09F2341D5" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_intranalytics_pipe" , password = "*E74430F222F640CD14289A73DACC9BC27BB58498" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_centralization" , password = "*811CA05F641EC836EC565311F7E2345DCAF635FA" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_users_sync" , password = "*C5386E368F9719F26A3764FED7156C5C5FB54C13" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_goals" , password = "*12D029BBF64B1416316605A213F16FD00FFC08B3" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_management" , password = "*2F3B971A3971D99B24BBDC01D68F7427774DA6AB" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_api_questionnaire" , password = "*3973ED8AAEF7B5CAA814FC706D2B9DE3ECC43036" , default_hostgroup = 0 , active = 1, max_connections=500 },
+  { username = "user_student_metrics" , password = "*A544DC3688F1ED888C12371B5AA52AAA873F4E51" , default_hostgroup = 0 , active = 1, max_connections=500 }
+
+)
+
+
+#defines MySQL Query Rules
+mysql_query_rules:
+(
+  {
+    rule_id=1
+    active=1
+    digest="0xDB8B90D1AE6EE4C6"
+    destination_hostgroup=1
+    cache_ttl=300000
+    apply=1
+    comment="Consulta cacheada cada 5mins - Feb22"
+  },
+  {
+    rule_id=2
+    active=1
+    digest="0x0956E17C2B563AE4"
+    destination_hostgroup=1
+    apply=1
+    comment="SELECT id,sid,state,userid,lastip,timecreated,timemodified FROM mdl_sessions WHERE sid = ?, Feb23"
+  },
+  {
+    rule_id=3
+    active=1
+    digest="0xDE455BDB04AAD471"
+    destination_hostgroup=1
+    apply=1
+    comment="SELECT * FROM mdl_user WHERE id = ?, Feb23"
+  },
+  {
+    rule_id=4
+    active=1
+    digest="0x2B2AC9705F53F8F0"
+    destination_hostgroup=1
+    apply=1
+    comment="SELECT mu.id,mu.username,mu.deleted,mu.suspended,mu.firstname,mu.lastname FROM mdl_user mu WHERE mu.id = ?, Feb23"
+  },
+  {
+    rule_id=5
+    active=1
+    digest="0xBA8A2B27CE85A5AC"
+    destination_hostgroup=1
+    cache_ttl=300000
+    apply=1
+    comment="SELECT mdl_u_company_id FROM mdl_u_user_additional_info WHERE mdl_user_id = ?, Feb24"
+  }
+)
+
+scheduler=
+(
+)
+
+mysql_replication_hostgroups=
+(
+  { writer_hostgroup=0, reader_hostgroup=1, check_type="innodb_read_only", comment="Ubits test" }
+)

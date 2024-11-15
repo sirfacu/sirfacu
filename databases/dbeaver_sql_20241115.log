@@ -1,0 +1,47 @@
+!ENTRY org.jkiss.dbeaver.model 0 31 2024-11-15 10:09:38.468
+!MESSAGE COMMIT
+
+!ENTRY org.jkiss.dbeaver.model 0 33 2024-11-15 10:09:38.699
+!MESSAGE COMMIT
+
+!ENTRY org.jkiss.dbeaver.model 0 69 2024-11-15 10:10:54.563
+!MESSAGE COMMIT
+
+!ENTRY org.jkiss.dbeaver.model 0 71 2024-11-15 10:10:54.783
+!MESSAGE COMMIT
+
+!ENTRY org.jkiss.dbeaver.model 0 73 2024-11-15 10:10:54.855
+!MESSAGE COMMIT
+
+!ENTRY org.jkiss.dbeaver.model 0 77 2024-11-15 10:14:00.715
+!MESSAGE COMMIT
+
+!ENTRY org.jkiss.dbeaver.model 0 79 2024-11-15 10:14:00.939
+!MESSAGE COMMIT
+
+!ENTRY org.jkiss.dbeaver.model 1 99 2024-11-15 10:15:27.322
+!MESSAGE alter user 'qa_ypacanchique' identified by 'E_4J3Eg185e6%ilK'
+!SUBENTRY 1 org.jkiss.dbeaver.model 1 0 2024-11-15 10:15:27.469
+!MESSAGE SUCCESS [0]
+
+!ENTRY org.jkiss.dbeaver.model 1 101 2024-11-15 10:15:32.633
+!MESSAGE commit
+!SUBENTRY 1 org.jkiss.dbeaver.model 1 0 2024-11-15 10:15:32.706
+!MESSAGE SUCCESS [0]
+
+!ENTRY org.jkiss.dbeaver.model 1 155 2024-11-15 10:23:30.677
+!MESSAGE alter user 'qa_ypacanchique' identified by 'E_4J3Eg185e6%ilK';
+commit
+!SUBENTRY 1 org.jkiss.dbeaver.model 4 1064 2024-11-15 10:23:30.816
+!MESSAGE You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'commit' at line 2
+
+!ENTRY org.jkiss.dbeaver.model 1 157 2024-11-15 10:23:32.739
+!MESSAGE alter user 'qa_ypacanchique' identified by 'E_4J3Eg185e6%ilK'
+!SUBENTRY 1 org.jkiss.dbeaver.model 1 0 2024-11-15 10:23:32.881
+!MESSAGE SUCCESS [0]
+
+!ENTRY org.jkiss.dbeaver.model 1 159 2024-11-15 10:23:32.881
+!MESSAGE commit
+!SUBENTRY 1 org.jkiss.dbeaver.model 1 0 2024-11-15 10:23:32.950
+!MESSAGE SUCCESS [0]
+

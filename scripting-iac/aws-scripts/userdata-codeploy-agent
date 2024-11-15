@@ -1,0 +1,14 @@
+#scripta para ubuntu 24.04 
+apt-get update && apt-get install -y --no-install-recommends lsb-release wget apt-transport-https ca-certificates gnupg mysql-client-core-8.0 ruby-full
+wget -O - 'https://repo.proxysql.com/ProxySQL/proxysql-2.7.x/repo_pub_key' | apt-key add -
+echo "deb https://repo.proxysql.com/ProxySQL/proxysql-2.7.x/$(lsb_release -sc)/ ./" | tee /etc/apt/sources.list.d/proxysql.list
+echo "deb https://repo.proxysql.com/ProxySQL/proxysql-2.7.x/$(lsb_release -sc)/ ./" | tee /etc/apt/sources.list.d/proxysql.list
+apt-get update 
+apt install proxysql -y
+#install codedeploy agent
+wget https://aws-codedeploy-us-east-1.s3.us-east-1.amazonaws.com/latest/install
+chmod +x ./install
+./install auto
+sed -i 's/:max_revisions: 5/:max_revisions: 2/' /etc/codedeploy-agent/conf/codedeployagent.yml
+systemctl enable codedeploy-agent
+rm -rf install

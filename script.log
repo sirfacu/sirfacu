@@ -1,9 +1,0 @@
-Realizando copia de seguridad del archivo --domain.xml--
-Carpeta/opt/rh/jboss-eap-7.0 archivo domain.xml fecha  2024-05-31
-cp /opt/rh/jboss-eap-7.0/domain/configuration/domain.xml  a -->  domain.xml.2024-05-31
-El archivo de copia de seguridad /opt/rh/jboss-eap-7.0/domain/configuration/domain.xml.2024-05-31 NO se pudo crear. Verifique los permisos.
-\033[0;36m VAULT - Estableciendo definiciones de vault sobre el dominio \033[0m
-VAULT - Procesando perfil:Authenticating  datasource  Authenticating
-\033[0;36m VAULT - Estableciendo definiciones de vault sobre el dominio \033[0m
-VAULT - Procesando perfil:Authenticating  datasource  Authenticating
-\033[0;36m VAULT - Estableciendo definiciones de vault sobre el dominio \033[0m
