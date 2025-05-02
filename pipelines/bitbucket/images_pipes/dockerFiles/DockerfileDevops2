@@ -1,0 +1,76 @@
+# Stage 1: Build tools and dependencies
+FROM ubuntu:22.04 AS build
+
+# Actualizar repositorios y asegurarse de que estén disponibles
+RUN apt-get update
+
+RUN apt-get install -y --no-install-recommends\
+    net-tools \
+    zip \
+    tar \
+    telnet \
+    wget \
+    gettext \
+    bash \
+    coreutils \
+    grep \
+    procps \
+    sed \
+    curl \
+    python3 \
+    && pip3 install --no-cache --upgrade pip \
+    && apt-get install -y --no-cache --virtual .build-deps gcc g++ make
+
+#Instalacion de sops
+RUN curl -LO https://github.com/getsops/sops/releases/download/v3.9.1/sops-v3.9.1.linux.amd64 \
+    && mv sops-v3.9.1.linux.amd64 /usr/local/bin/sops\
+    && chmod +x /usr/local/bin/sops
+
+
+ENV NVM_DIR /root/.nvm
+RUN wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash \
+    && . "$NVM_DIR/nvm.sh" \
+    && nvm install node \
+    && npm install -g npm \
+    && nvm use node
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install
+
+
+
+# Stage 2: Final lightweight image
+FROM alpine:3.18
+
+COPY --from=build /usr/local /usr/local
+COPY --from=build /usr/bin/docker /usr/bin/docker
+COPY --from=build /usr/bin/aws /usr/bin/aws
+COPY --from=build /usr/local/aws-cli /usr/local/aws-cli
+COPY --from=build /root/.nvm /root/.nvm
+
+RUN apt-get install -y --no-install-recommends \
+    bash \
+    net-tools \
+    zip \
+    tar \
+    telnet \
+    wget \
+    gettext \
+    coreutils \
+    grep \
+    procps \
+    sed \
+    curl \
+    python3 \
+    py3-pip \
+    docker-cli \
+    aws-cli
+
+ENV NVM_DIR /root/.nvm
+ENV NODE_VERSION=node
+RUN echo "source $NVM_DIR/nvm.sh" >> /root/.bashrc
+
+# Comando por defecto
+CMD ["/bin/bash"]
+

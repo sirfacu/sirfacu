@@ -1,0 +1,29 @@
+{
+  "family": "${TD_SERVICE_NAME}",
+  "networkMode": "${TD_NETWORK_MODE}",
+  "containerDefinitions": [
+    {
+      "name": "${TD_SERVICE_NAME}",
+      "image": "${TD_IMAGE_NAME}",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${TD_LOG_GROUP}",
+          "awslogs-region": "${TD_AWS_DEFAULT_REGION}",
+          "awslogs-stream-prefix": "${TD_SERVICE_NAME}-ecs-service"
+        }
+      },
+      "portMappings": [
+        {
+          "containerPort": ${TD_PORT},
+          "hostPort": ${TD_HOST_PORT},
+          "protocol": "${TD_PROTOCOL}"
+        }
+      ],
+      "essential": true,
+      "environment": []
+    }
+  ],
+  "cpu": "${TD_CPU}",
+  "memory": "${TD_MEMORY}"
+}

@@ -1,0 +1,413 @@
+image:
+  name: 824404647578.dkr.ecr.us-east-1.amazonaws.com/ubits-dev-devops-ecs-ecr:node-20.388
+  aws:
+    access-key: $DEV_AWS_ACCESS_KEY_ID
+    secret-key: $DEV_AWS_SECRET_ACCESS_KEY
+
+definitions:
+  caches:
+    node-team: node_modules
+    node-squadpoc: node_modules
+    node-dev: node_modules
+    node-test: node_modules
+    node-prod: node_modules
+
+  steps:
+    - step: &set-env
+        name: Configurando Variables de Ambiente
+        clone:
+          enabled: false
+        script:
+          - set -a
+          - source set_env.sh
+          - export ENVIRONMENT=${ENVIRONMENT//-/_}
+          - echo "export AWS_ACCESS_KEY_ID=\${"${ENVIRONMENT^^}"_AWS_ACCESS_KEY_ID}" >> set_env.sh
+          - echo "export AWS_SECRET_ACCESS_KEY=\${"${ENVIRONMENT^^}"_AWS_SECRET_ACCESS_KEY}" >> set_env.sh
+          - echo "export AWS_DEFAULT_REGION=\${"${ENVIRONMENT^^}"_AWS_DEFAULT_REGION}" >> set_env.sh
+          - echo "export AWS_ACCOUNT_ID=\${"${ENVIRONMENT^^}"_ACCOUNT_ID}" >> set_env.sh
+          - |
+            if [ "${ENVIRONMENT}" != "prod" ]; then
+              echo export S3_BUCKET="ubits-${ENVIRONMENT}-s3-lxp-microfrontend.${DOMAIN_LOWER_ENV}" >> set_env.sh
+              echo export S3_BUCKET_IMPORT_MAP="ubits-${ENVIRONMENT}-s3-lxp-importmap.${DOMAIN_LOWER_ENV}" >> set_env.sh
+              echo "eval CDN_MFS=${LOWER_ENV_MFS_CDN}" >> set_env.sh
+            else
+              echo export S3_BUCKET="ubits-pdn-s3-lxp-microfrontend.${DOMAIN_LEARNING}" >> set_env.sh
+              echo export S3_BUCKET_IMPORT_MAP="ubits-pdn-s3-lxp-importmap.${DOMAIN_LEARNING}" >> set_env.sh
+              echo "CDN_MFS=${PROD_MFS_CDN}" >> set_env.sh
+            fi
+          - echo SCRIPT_ARTIFACT=\'npm run build:webpack-deploy\' >>set_env.sh
+        artifacts:
+          - set_env.sh
+
+    - step: &get-token
+        name: Generacion token codeartifact
+        clone:
+          enabled: false
+        script:
+          - export AWS_ACCESS_KEY_ID=${DEV_AWS_ACCESS_KEY_ID}
+          - export AWS_SECRET_ACCESS_KEY=${DEV_AWS_SECRET_ACCESS_KEY}
+          - export AWS_DEFAULT_REGION=${DEV_AWS_DEFAULT_REGION}
+          - echo CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain ${CODEARTIFACT_DOMAIN} --domain-owner ${CODEARTIFACT_DOMAIN_OWNER} --query authorizationToken --output text) >> set_env.sh
+        artifacts:
+          - set_env.sh
+
+    - step: &clear-caches
+        name: Clear caches
+        script:
+          - export AWS_ACCESS_KEY_ID=${DEV_AWS_ACCESS_KEY_ID}
+          - export AWS_SECRET_ACCESS_KEY=${DEV_AWS_SECRET_ACCESS_KEY}
+          - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 824404647578.dkr.ecr.us-east-1.amazonaws.com
+          - pipe: docker://824404647578.dkr.ecr.us-east-1.amazonaws.com/ubits-dev-devops-fg-ecs-ecr:clear-caches-v6
+            variables:
+              BITBUCKET_APP_KEY: $BITBUCKET_APP_KEY
+              BITBUCKET_APP_SECRET: $BITBUCKET_APP_SECRET
+              CACHES: ['node-${ENVIRONMENT//[-0-9]/}']
+        condition:
+          changesets:
+            includePaths:
+              - 'package.json'
+
+    - step: &install
+        name: Instalacion de dependencias NPM
+        script:
+          - source set_env.sh
+          - npm config set registry=https://${CODEARTIFACT_DOMAIN}-${CODEARTIFACT_DOMAIN_OWNER}.d.codeartifact.${CODEARTIFACT_AWS_DEFAULT_REGION}.amazonaws.com/npm/${CODEARTIFACT_NODE_REPOSITORY}/
+          - npm config set //${CODEARTIFACT_DOMAIN}-${CODEARTIFACT_DOMAIN_OWNER}.d.codeartifact.${CODEARTIFACT_AWS_DEFAULT_REGION}.amazonaws.com/npm/${CODEARTIFACT_NODE_REPOSITORY}/:_authToken=${CODEARTIFACT_AUTH_TOKEN}
+          - npm install
+
+    - step: &test-and-coverage
+        name: Ejecutando pruebas y cobertura de codigo
+        script:
+          - npm run test
+          - npm run coverage
+        artifacts:
+          - src/coverage/**
+
+    - step: &publish-sonarqube
+        name: Generando reporte a sonarQube
+        script:
+          - pipe: sonarsource/sonarqube-scan:1.1.0
+            variables:
+              SONAR_HOST_URL: ${SONAR_HOST_URL}
+              SONAR_TOKEN: ${SONAR_TOKEN}
+
+    - step: &get-version
+        name: Generacion de version de artefacto
+        services:
+          - docker
+        script:
+          - source set_env.sh
+          - chmod +x ./pipe/pipe.sh
+          - ./pipe/pipe.sh
+        artifacts:
+          - dist/*
+          - set_env.sh
+
+    - step: &tag-version
+        name: Subiendo version del tag
+        script:
+          - set -a
+          - source set_env.sh
+          - git tag v${ARTIFACT_VERSION}
+          - git push --tags
+
+    - step: &security-scan
+        name: Escaneo de Seguridad
+        script:
+          - pipe: atlassian/git-secrets-scan:0.4.3
+            variables:
+              FILES: '**/*.txt **/*.json **/*.yml **/*.properties **/*.env'
+
+    - step: &build-artifact
+        name: Configuracion variables del artefacto
+        script:
+          - set -a
+          - source set_env.sh
+          - |
+            if [ ! -d src/environments/ ]; then
+                mkdir -p src/environments/
+            fi
+            echo "ENVIRONMENT=${ENVIRONMENT}" > src/environments/.env.deploy
+          - for var in "${!ENV_@}"; do eval "echo ${var/ENV_/}=${!var}">> src/environments/.env.deploy; done;
+          - echo -e ${CYAN}"Compilando microfront "${RESET}${ROJO}${ARTIFACT_NAME}${RESET}
+          - eval $SCRIPT_ARTIFACT
+
+        artifacts:
+          - dist/*
+          - set_env.sh
+
+    - step: &publish-artifact
+        name: Publicacion del artefacto a repo de MFs
+        script:
+          - set -a
+          - source set_env.sh
+          - echo -e ${CYAN}"Publicando MF ${RESET}${ROJO}$ARTIFACT_NAME ${RESET}${CYAN}a bucket de microfronts "${RESET}${VERDE}"${S3_BUCKET}/ubits-${MF_INITIATIVE}-mf/"${RESET}
+          - aws s3 cp dist s3://${S3_BUCKET}/ubits-${MF_INITIATIVE}-mf/ --cache-control="no-store,no-cache,must-revalidate" --recursive
+
+        artifacts:
+          - dist/*
+          - set_env.sh
+
+    - step: &update-import-map
+        name: Actualizando import map para el manager
+        clone:
+          enabled: false
+        script:
+          - set -a
+          - source set_env.sh
+          - echo "{\"imports\":{\"@ubits-mf/${MF_INITIATIVE}\":\"https://${CDN_MFS}/ubits-${MF_INITIATIVE}-mf/${ARTIFACT_NAME}\"}}" > ${NAME_IMPORT_MAP}
+          - echo -e "${CYAN}Publicación del MF ${RESET}${ROJO}$ARTIFACT_NAME ${RESET}${CYAN} al manager con el valor \n${RESET}${ROJO}$(cat ${NAME_IMPORT_MAP})${RESET}"
+          - aws s3 cp ${NAME_IMPORT_MAP}  s3://$S3_BUCKET_IMPORT_MAP/$S3_MANAGER_FOLDER_IM/ --cache-control="no-store,no-cache,must-revalidate"
+
+    - step: &check-branch-source
+        name: Validación permisos de despliegue
+        clone:
+          enabled: false
+        script:
+          - |
+            if [ $BITBUCKET_BRANCH != "master" ]; then
+              echo -e "Branch " ${CYAN} $BITBUCKET_BRANCH ${RESET} " no es master, " ${ROJO} "No esta permitido desplegar" ${RESET};
+              exit 1;
+            else
+              echo -e "Branch " ${CYAN} $BITBUCKET_BRANCH ${RESET} " es master," ${VERDE} "Despliegue posible" ${RESET};
+              exit 0;
+            fi
+
+pipelines:
+  default:
+    - step:
+        name: Definiendo ambiente
+        script:
+          - echo ENVIRONMENT=dev >> set_env.sh
+        artifacts:
+          - set_env.sh
+    - step: *set-env
+    - step: *security-scan
+    - step: *get-token
+    - step: *clear-caches
+    - step:
+        <<: *install
+        caches:
+          - node-dev
+    - step:
+        <<: *test-and-coverage
+        caches:
+          - node-dev
+
+  custom:
+    poc:
+      - step:
+          name: Definiendo ambiente
+          script:
+            - echo ENVIRONMENT=squad-poc >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *get-token
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-squadpoc
+      - step:
+          <<: *test-and-coverage
+          caches:
+            - node-squadpoc
+      #      - step: *publish-sonarqube
+      - step:
+          <<: *get-version
+          caches:
+            - node-squadpoc
+      - stage:
+          name: Desplegando en el ambiente  POC
+          deployment: poc
+          steps:
+            - step:
+                <<: *build-artifact
+                caches:
+                  - node-squadpoc
+            - step:
+                <<: *publish-artifact
+                caches:
+                  - node-squadpoc
+            - step:
+                <<: *update-import-map
+                name: Desplegando en el ambiente  POC
+            - step: *tag-version
+
+    team:
+      - variables:
+          - name: ENVIRONMENT
+            default: team-100
+            allowed-values:
+              - team-100
+              - team-101
+              - team-102
+              - team-103
+              - team-104
+              - team-105
+              - team-106
+              - team-107
+              - team-108
+              - team-109
+              - team-110
+              - team-111
+              - team-112
+      - step: *set-env
+      - step: *security-scan
+      - step: *get-token
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-team
+      - step:
+          <<: *test-and-coverage
+          caches:
+            - node-team
+      #      - step: *publish-sonarqube
+      - step:
+          <<: *get-version
+          caches:
+            - node-team
+      - stage:
+          name: Desplegando en el ambiente  TEAM
+          deployment: team
+          steps:
+            - step:
+                <<: *build-artifact
+                caches:
+                  - node-team
+            - step:
+                <<: *publish-artifact
+                caches:
+                  - node-team
+            - step:
+                <<: *update-import-map
+                name: Desplegando en el ambiente TEAM
+            - step: *tag-version
+
+  branches:
+    develop:
+      - step:
+          name: Definiendo ambiente
+          script:
+            - echo ENVIRONMENT=dev >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *get-token
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-dev
+      - step:
+          <<: *test-and-coverage
+          caches:
+            - node-dev
+      #      - step: *publish-sonarqube
+      - step:
+          <<: *get-version
+          caches:
+            - node-dev
+      - stage:
+          name: Desplegando en el ambiente  DEV
+          deployment: dev
+          steps:
+            - step:
+                <<: *build-artifact
+                caches:
+                  - node-dev
+            - step:
+                <<: *publish-artifact
+                caches:
+                  - node-dev
+            - step:
+                <<: *update-import-map
+                name: Desplegando en el ambiente  DEV
+            - step: *tag-version
+
+    staging:
+      - step:
+          name: Definiendo ambiente
+          script:
+            - echo ENVIRONMENT=test >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *get-token
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-test
+      - step:
+          <<: *test-and-coverage
+          caches:
+            - node-test
+      - step:
+          <<: *get-version
+          caches:
+            - node-test
+      - stage:
+          name: Desplegando en el ambiente  TEST
+          deployment: test
+          steps:
+            - step:
+                <<: *build-artifact
+                caches:
+                  - node-test
+            - step:
+                <<: *publish-artifact
+                caches:
+                  - node-test
+            - step:
+                <<: *update-import-map
+              name: Desplegando en el ambiente  TEST
+            - step: *tag-version
+
+    master:
+      - step: *check-branch-source
+      - step:
+          name: Definiendo ambiente
+          script:
+            - echo ENVIRONMENT=prod >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *get-token
+      - step: *clear-caches
+      - step:
+          <<: *install
+          caches:
+            - node-prod
+      - step:
+          <<: *test-and-coverage
+          caches:
+            - node-prod
+      - step:
+          <<: *get-version
+          caches:
+            - node-prod
+      - stage:
+          name: Desplegando en el ambiente  Prod
+          deployment: prod
+          trigger: manual
+          steps:
+            - step:
+                <<: *build-artifact
+                caches:
+                  - node-prod
+            - step:
+                <<: *publish-artifact
+                caches:
+                  - node-prod
+            - step:
+                <<: *update-import-map
+                name: Desplegando en el ambiente  Prod
+            - step: *tag-version

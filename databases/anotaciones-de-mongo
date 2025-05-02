@@ -1,0 +1,379 @@
+###########################################################################################################################################################################################################################
+###########################################################################################################################################################################################################################
+###########################################################################################################################################################################################################################
+
+
+# 1. para instalar la llave del repo
+sudo apt-get install -y gnupg curl
+curl -fsSL https://pgp.mongodb.com/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+
+
+# 2. Instalacion mongo
+https://repo.mongodb.org/apt/debian/dists/buster/mongodb-org/4.4/main/binary-amd64/
+
+wget https://repo.mongodb.org/apt/debian/dists/buster/mongodb-org/4.4/main/binary-amd64/mongodb-mongosh_2.5.0_amd64.deb
+sudo apt install ./mongodb-mongosh_*_amd64.deb
+rm mongodb-mongosh_*_amd64.deb
+
+
+# 2. Crear el archivo de lista para MongoDB
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-database-tools awscli
+
+
+
+###########################################################################################################################################################################################################################
+###########################################################################################################################################################################################################################
+###########################################################################################################################################################################################################################
+
+mongo -u root -p $PWD_DB --eval 'db = db.getSiblingDB("student_metrics"); db.getUsers()' > student_metrics.js
+db.getCollectionNames()
+
+mongo -u root -p $PWD_DB --eval 'db = db.getSiblingDB("student_metrics"); db.getUsers()' > student_metrics.js
+
+
+db= db.getSiblingDB("lxp_strapi_cms"); db.createUser({user: "lxp-test",pwd: "t3MP0R4lpWD",roles: [{ role: "readWrite", db: "lxp_strapi_cms"}]);
+
+
+db= db.getSiblingDB("PowerBIInternal");
+db.changeUserPassword("jrios", "_66pavJoW6+8MQh=");
+db.getSiblingDB("PowerBIInternal"); db.createUser({user: "jrios",pwd: "_66pavJoW6+8MQh=",roles: [{ role: "read", db: "PowerBIInternal"}]);
+db.createUser({user: "jrios",pwd: "_66pavJoW6+8MQh=",roles:[{role: "read", db: "PowerBIInternal"}]});
+
+
+###########################################################################################################################################################################################################################
+###########################################################################################################################################################################################################################
+###########################################################################################################################################################################################################################
+
+DB_NAME="student_metrics"
+TMP_FOLDER="/backup"
+
+
+mkdir -p $TMP_FOLDER/dump
+# Obtener kas BD
+DATABASES=$(mongosh --authenticationDatabase admin  --quiet --eval "db.adminCommand('listDatabases').databases.map(db => db.name).join(' ')")
+# Obtener nombres de colecciones
+COLLECTIONS=$(mongo -u root -p "$PWD_DB" --quiet --eval "db = db.getSiblingDB('$DB_NAME'); db.getCollectionNames().join(' ')" | sed 's/[][]//g; s/[",]//g')
+# Exportar cada colección
+for COLLECTION in $COLLECTIONS; do
+    TOTAL_DOCS=$(mongosh --host $MONGO_HOST:$MONGO_PORT --username $MONGO_USER --password $MONGO_PWD --authenticationDatabase admin --eval "db.getSiblingDB('$DB_NAME').$COLLECTION.countDocuments()" --quiet)
+    echo "La cantidad de documentos en la coleccion:$COLLECTION es: $TOTAL_DOCS" > $TMP_FOLDER/exports/${DB_NAME}-${COLLECTION}-export.log
+    echo "Exportando colección: $COLLECTION"
+    mongodump --u ubitsadmin -p "$PWD_DB" --authenticationDatabase admin --db "$DB_NAME" --collection "$COLLECTION" --out "$TMP_FOLDER/exports/${DB_NAME}-${COLLECTION}.json" --gzip 
+done
+
+#!/bin/bash
+
+# Ejecuta mongosh y guarda los nombres de todas las bases de datos en una variable
+DBS=$(\
+  --host your-docdb-cluster.cluster-xxxxx.us-east-1.docdb.amazonaws.com:27017 \
+  --ssl \
+  --sslCAFile rds-combined-ca-bundle.pem \
+  --username yourUser \
+  --password yourPass \
+  --authenticationDatabase admin)
+
+# Itera sobre los nombres y los imprime
+for db in $DBS; do
+  echo "mi bd es $db"
+done
+
+
+
+mongoexport -u root -p "$PWD_DB" --authenticationDatabase admin --db "$DB_NAME" --collection "$COLLECTION" --out "$TMP_FOLDER/exports/${DB_NAME}-${COLLECTION}.json"
+
+
+
+use admin
+
+db.createUser({
+  user: "user_datadog",
+  pwd: "H9^NVrs!7MMTm&10",
+  roles: [
+    { role: "clusterMonitor", db: "admin" },
+    { role: "readAnyDatabase", db: "admin" }
+  ]
+})
+
+#### conectarse a la mongo
+mongosh --host student-metrics.rds.ubitslearning.com:27017 --username ubitsadmin --password '5n8LfP=0D6n_9H*'   --authenticationDatabase admin
+############ DOCUMENTDB AWS IMPORT
+mongoimport --host student-metrics.rds.ubitslearning.com:27017 --username ubitsadmin --password '5n8LfP=0D6n_9H*'   --authenticationDatabase admin   --db student_metrics --collection progressExtended --file student_metrics-progressExtended.json
+mongoimport --host student-metrics.rds.ubitslearning.com:27017 --username ubitsadmin --password '5n8LfP=0D6n_9H*'   --authenticationDatabase admin   --db student_metrics --collection Progress --file student_metrics-Progress.json
+mongoimport --host student-metrics.rds.ubitslearning.com:27017 --username ubitsadmin --password '5n8LfP=0D6n_9H*'   --authenticationDatabase admin   --db student_metrics --collection adminRRHH --file student_metrics-adminRRHH.json
+mongoimport --host student-metrics.rds.ubitslearning.com:27017 --username ubitsadmin --password '5n8LfP=0D6n_9H*'   --authenticationDatabase admin   --db student_metrics --collection planPorEmpresa --file student_metrics-planPorEmpresa.json
+mongoimport --host student-metrics.rds.ubitslearning.com:27017 --username ubitsadmin --password '5n8LfP=0D6n_9H*'   --authenticationDatabase admin   --db student_metrics --collection planPorUsuario --file student_metrics-planPorUsuario.json
+mongoimport --host student-metrics.rds.ubitslearning.com:27017 --username ubitsadmin --password '5n8LfP=0D6n_9H*'   --authenticationDatabase admin   --db student_metrics --collection studentsInfo --file student_metrics-studentsInfo.json
+
+
+
+
+COLLECTIONS="progressExtended Progress adminRRHH planPorEmpresa planPorUsuario studentsInfo"
+for collection in $COLLECTIONS; do mongoimport --host student-metrics.rds.ubitslearning.com:27017 --username ubitsadmin --password '5n8LfP=0D6n_9H*'   --authenticationDatabase admin   --db student_metrics --collection $collection --file student_metrics-$collection.json > $collection-import.log; done
+for collection in COLLECTIONS; do echo "mi colleciontion es "$collection; done
+### creacion usuarios para documentDB
+use admin
+#Ejemplo de como crear usuarios administradores para no usar el root
+db.createUser({
+  user: "admin_global",
+  pwd: "UnaContraseñaMuySegura123!", // Cambia esto por una contraseña fuerte
+  roles: [
+    { role: "userAdminAnyDatabase", db: "admin" },    // Administrar usuarios
+    { role: "dbAdminAnyDatabase", db: "admin" },      // Administrar esquemas
+    { role: "clusterAdmin", db: "admin" },            // Administrar clúster
+    { role: "readWriteAnyDatabase", db: "admin" }     // Lectura/escritura
+  ],
+  mechanisms: ["SCRAM-SHA-1"]  // Usar mecanismo de autenticación seguro
+});
+### creacion usuarios tticket IN-1608
+use admin;
+
+db.createUser({
+  user: "adm_ytrejos",
+  pwd: "Ytr3j0s$DB2024Secure",
+  roles: [
+    { role: "userAdminAnyDatabase", db: "admin" },
+    { role: "dbAdminAnyDatabase", db: "admin" },
+    { role: "clusterAdmin", db: "admin" },
+    { role: "readWriteAnyDatabase", db: "admin" }
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+
+db.createUser({
+  user: "adm_jdveloz",
+  pwd: "JDv3l0z*MongoAdmin24",
+  roles: [
+    { role: "userAdminAnyDatabase", db: "admin" },
+    { role: "dbAdminAnyDatabase", db: "admin" },
+    { role: "clusterAdmin", db: "admin" },
+    { role: "readWriteAnyDatabase", db: "admin" }
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+
+db.createUser({
+  user: "adm_jlemus",
+  pwd: "JL3mus#Database2024!",
+  roles: [
+    { role: "userAdminAnyDatabase", db: "admin" },
+    { role: "dbAdminAnyDatabase", db: "admin" },
+    { role: "clusterAdmin", db: "admin" },
+    { role: "readWriteAnyDatabase", db: "admin" }
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+
+db.createUser({
+  user: "adm_macarrillo",
+  pwd: "Mac4rr1ll0-DBAdmin24",
+  roles: [
+    { role: "userAdminAnyDatabase", db: "admin" },
+    { role: "dbAdminAnyDatabase", db: "admin" },
+    { role: "clusterAdmin", db: "admin" },
+    { role: "readWriteAnyDatabase", db: "admin" }
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+
+db.createUser({
+  user: "devs_yalvarez",
+  pwd: "5RKE&MpsgX7!pWxC", 
+  roles: [
+    { role: "dbAdminAnyDatabase", db: "admin" },
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+
+db.createUser({
+  user: "user_student_service",
+  pwd: "g6rDmY0zazZG*", 
+  roles: [
+    { role: "readWrite", db: "student_metrics" } 
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+mongosh --host student-metrics.rds.ubitslearning.com:27017 --username user_student_service --password 'g6rDmY0zazZG*'   --authenticationDatabase admin
+
+db.createUser({
+  user: "user_emr_analitica",
+  pwd: "bmV6xKIt4=FrMEk", 
+  roles: [
+    { role: "readWrite", db: "student_metrics" } 
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+
+
+db.createUser({
+  user: "devs_mrodriguez",
+  pwd: "aDa8_l@jXnP8^C#-", 
+  roles: [
+    { role: "read", db: "student_metrics" } 
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+
+db.updateUser("user_emr_analitica", { pwd: "bmV6xKIt4=FrMEk" });
+
+
+
+db.grantRolesToUser("user_emr_analitica", [{ role: "dbAdmin", db: "student_metrics" },]);
+
+
+db.createCollection("pruebita", {capped: false,});
+
+db.updateUser(
+  "user_emr_analitica",
+  {
+    roles: [
+      { role: "readWrite", db: "student_metrics" } 
+    ]
+  }
+);
+
+
+db.runCommand({
+  rolesInfo: { role: "dbAdmin", db: "student_metrics" },
+  showPrivileges: true
+});
+
+
+db.grantRolesToUser("user_emr_analitica", [
+  { role: "readWrite", db: "student_metrics" },
+  { role: "dbAdmin", db: "student_metrics" }
+]);
+
+
+#### lectura de la salida de: db.Progress.stats().
+
+## Campo	                          Significado
+ns                            El namespace: nombre_base.nombre_coleccion. En tu caso, student_metrics.Progress.
+count                         Cantidad de documentos en la colección: 1,450,350 documentos.
+size                        	Tamaño total (en bytes) de todos los documentos reales, sumados. Aquí: 1,032 MB (aprox).
+avgObjSize                    Tamaño promedio de un documento (en bytes): cada documento pesa unos 712 bytes.
+storageSize                   Espacio reservado en disco para la colección (incluye relleno interno). Es mayor que size. Aquí:  302 MB (aprox).
+unusedStorageSize             Espacio no utilizado dentro del storageSize. Es decir, hay 42 MB desperdiciados (3% de storageSize).
+compression                   Si la colección tiene compresión activada. (Aquí: no (false)).
+capped                        Si la colección es capped (tamaño fijo y FIFO). (Aquí: no).
+nindexes                    	Número de índices creados: aquí hay 2 índices.
+totalIndexSize                Tamaño total de todos los índices en bytes: ~104 MB.
+indexSizes                    Detalle individual de cada índice:
+                                        - _id_ ocupa ~58 MB
+                                        - studentId_1 ocupa ~46 MB
+collScans                    Número de veces que Mongo tuvo que escanear toda la colección (full scan). 25,660 veces (no muy bueno si es muy alto).
+idxScans                     Número de veces que se usaron índices en consultas. 282,899 veces (ideal que sea más alto que collScans). 
+opCounter	Contador de operaciones:
+- numDocsIns: 1,450,350 documentos insertados.
+- numDocsUpd: 0 documentos actualizados.
+- numDocsDel: 0 documentos eliminados.
+cacheStats	Estadísticas de uso de la cache de bloques:
+- collBlksHit: bloques de colección leídos de memoria.
+- collBlksRead: bloques que hubo que leer de disco.
+- collHitRatio: porcentaje de aciertos en cache (98.44%, muy bueno).
+- idxBlksHit y idxBlksRead: igual pero para índices.
+lastReset	Fecha de la última vez que se reseteó el contador de estadísticas.
+ok	Estado del comando: 1 significa que todo salió bien.
+operationTime	Timestamp del momento de ejecución (no te afecta mucho para interpretación normal).
+
+
+
+#### script para importar/exporta las colecciones
+echo $CYAN"Seleccione una operación:"$RESET
+echo $ROJO"1) Exportar datos (mongoexport)"$RESET
+echo $VERDE"2) Importar datos (mongoimport)"$RESET
+read -p "Opción (1/2): " OPCION
+
+export MONGO_PORT=27017
+export MONGO_HOST="lms-docdb.rds.ubitslearning.com"
+export MONGO_USER=user_lms_document
+export MONGO_PWD=tnCTpGN1Q3GeL6P5D0mb
+
+TMP_FOLDER=dumps
+FECHA_BACKUP=$(date +%Y-%m-%d)
+if [ -d "$TMP_FOLDER" ]; then
+    echo "carpeta temporal existente"
+else
+    echo "Creando carpeta temporal "$TMP_FOLDER
+    mkdir -p $TMP_FOLDER
+fi
+
+DB=$(mongosh --host $MONGO_HOST:$MONGO_PORT --username $MONGO_USER -p $MONGO_PWD --authenticationDatabase admin --quiet --eval "db.adminCommand('listDatabases').databases.map(d => d.name).join(' ')" | sed 's/\[//;s/\]//;s/\"//g')
+
+for DB_NAME in $DB; do
+    echo "Procesando Base de datos "$DB_NAME
+    query=$(echo "mongosh --host $MONGO_HOST:$MONGO_PORT --username $MONGO_USER -p $MONGO_PWD --authenticationDatabase admin --quiet --eval 'db = db.getSiblingDB(\"${DB_NAME}\"); db.getCollectionNames()'");
+    eval $query > $TMP_FOLDER/$DB_NAME-collections.log;
+    sed -i 's/[][]//g; s/[",]//g'  $TMP_FOLDER/$DB_NAME-collections.log;
+    COLLECS=$(cat $TMP_FOLDER/$DB_NAME-collections.log);
+    echo -e "Archivo \n" $(cat $TMP_FOLDER/$DB_NAME-collections.log) "\nVariable n"$COLLECS;
+    for COLLECTION in $COLLECS; do
+        echo "Procesando coleccion "$COLLECTION  " en la BD \n"$DB_NAME
+        case $OPCION in
+          1)
+            echo "Se realizará una exportacion"
+            #mongoexport --host $MONGO_HOST:$MONGO_PORT --username $MONGO_USER -p $MONGO_PWD --authenticationDatabase admin --db $DB_NAME --collection $COLLECTION --out $TMP_FOLDER/$DB_NAME-$COLLECTION-export.json
+            mongoexport --host $MONGO_HOST:$MONGO_PORT --username $MONGO_USER -p $MONGO_PWD --authenticationDatabase admin --db $DB_NAME --collection $COLLECTION --gzip $TMP_FOLDER/dumps/export-$DB_NAME-$FECHA_BACKUP
+            ;;
+          2)
+            echo "Se realizará una importacion"
+            echo "El script buscara en la ruta $CYAN$TMP_FOLDER/dumps$RESET el archivo"
+            echo "A continuacion el listado de los archivos"
+            ls -l $TMP_FOLDER/dumps
+            read -p "Digite el nombre del archivo: " BACKUP_FILE
+            mongorestore --host $MONGO_HOST:$MONGO_PORT --username $MONGO_USER --password $MONGO_PWD --authenticationDatabase admin --db $DB_NAME  $TMP_FOLDER/dumps/BACKUP_FILE
+                    ;;
+        esac
+
+    done
+done
+
+
+
+---- eliminar DB
+db.getSiblingDB("lms_logs").dropDatabase()
+
+
+
+
+
+### ###################################
+### ###################################
+### 🧩 TABLA COMPARATIVA: mongodump/mongorestore vs mongoexport/mongoimport
+### ###################################
+### ###################################
+Característica	mongodump / mongorestore	mongoexport / mongoimport
+📦 Formato de respaldo	Binario (.bson)	Texto (.json, .csv)
+🧠 Preserva tipos BSON complejos	✅ Sí (e.g., Date, ObjectId)	❌ No completamente (se convierte a texto)
+📑 Incluye índices	✅ Sí	❌ No
+📂 Respalda toda la DB o colección	✅ Sí (con o sin filtros)	✅ Pero colección por colección
+🔁 Puede restaurar toda la DB	✅ Sí	❌ No directo (requiere scripts)
+📈 Ideal para migraciones completas	✅ Sí	❌ Limitado
+🔍 Fácil de editar con humanos	❌ No (binario)	✅ Sí (.json/.csv)
+📤 Exportar para análisis externo	❌ No (difícil de leer)	✅ Ideal para Excel, Python, etc.
+🧪 Compatible con herramientas BI	❌ No	✅ Sí
+🧪 Soporte para filtros	✅ Sí (con --query)	✅ Sí (con --query)
+⚡ Velocidad en grandes volúmenes	✅ Más rápido	❌ Más lento
+🧭 ¿Cuándo usar mongodump/mongorestore?
+Usa esto cuando:
+
+Quieres un respaldo completo y exacto (como copia de seguridad o migración).
+
+Necesitas mantener tipos de datos exactos, índices, colecciones, etc.
+
+Planeas restaurar en otra instancia Mongo sin preocuparte por conversiones.
+
+📌 Ideal para: backups, migraciones, clonar entornos completos.
+
+🧭 ¿Cuándo usar mongoexport/mongoimport?
+Usa esto cuando:
+
+Necesitas intercambiar datos con otras herramientas (Excel, Python, pandas, etc.).
+
+Quieres editar datos a mano (formato legible).
+
+Trabajas con datos planos o migraciones selectivas.
+
+📌 Ideal para: exportar datos para análisis, compartir con terceros, integración con otros sistemas.
+

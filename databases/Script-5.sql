@@ -1,1 +1,0 @@
-CREATE USER 'user_datastream'@'%' IDENTIFIED BY '_MzzeWX9WnVP-v+T';

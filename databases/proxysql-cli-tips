@@ -1,0 +1,51 @@
+---incio proxysql
+UPDATE mysql_servers SET hostname="test-upgrade-db-cluster.cluster-cjqpovg6bsbu.us-east-1.rds.amazonaws.com", port=3306 WHERE hostgroup_id=0;
+UPDATE mysql_servers SET hostname="test-upgrade-db-cluster.cluster-cjqpovg6bsbu.us-east-1.rds.amazonaws.com", port=3306 , hostgroup_id=0 WHERE hostgroup_id=1;
+LOAD MYSQL SERVERS TO RUNTIME;
+SAVE MYSQL SERVERS TO DISK;
+DELETE FROM global_variables WHERE variable_name = 'mysql-monitor_username';
+DELETE FROM global_variables WHERE variable_name = 'mysql-monitor_password';
+
+LOAD MYSQL VARIABLES TO RUNTIME;
+SAVE MYSQL VARIABLES TO DISK;
+
+UPDATE mysql_servers SET hostgroup_id=0, hostname="ubits-test-xlearning-v2.cjqpovg6bsbu.us-east-1.rds.amazonaws.com", port=3036 WHERE hostgroup_id=0;
+UPDATE mysql_servers SET hostgroup_id=0, hostname="ubits-test-xlearning-v2.cjqpovg6bsbu.us-east-1.rds.amazonaws.com", port=3036 WHERE hostgroup_id=0;
+LOAD MYSQL SERVERS TO RUNTIME;
+SAVE MYSQL SERVERS TO DISK;
+
+DELETE FROM mysql_servers WHERE hostgroup_id = 0 AND hostname ="ubits-test-xlearning-v2.cjqpovg6bsbu.us-east-1.rds.amazonaws.com" ;
+
+SET mysql-monitor_password='!65TPF@s0CupnlW';
+SET mysql-monitor_username='user_proxysql';
+SET mysql-auditlog_filename='/var/lib/proxysql/connections.log';
+SET mysql-auditlog_filesize=10485760;
+SET admin-mysql_ifaces=0.0.0.0:3306
+SET mysql-interfaces=0.0.0.0:3306
+
+
+set admin-web_port=8080;
+set admin-web_enabled=true;
+
+
+update global_variables set variable_value="8.0.4 (ProxySQL)" where variable_name='mysql-server_version';
+load mysql variables to run;save mysql variables to disk;
+
+
+update global_variables set variable_value=8080 where variable_name ="admin-web_port";
+update global_variables set variable_value=true where variable_name ="admin-web_enabled";
+LOAD MYSQL VARIABLES TO RUNTIME;
+SAVE MYSQL VARIABLES TO DISK;
+
+DELETE FROM mysql_users WHERE username like "user_%" ;
+LOAD MYSQL USERS TO RUNTIME;
+SAVE MYSQL USERS TO DISK;
+
+SET mysql-auditlog_filename='/var/lib/proxysql/connections.log';
+SET mysql-auditlog_filesize=10485760;
+
+UPDATE mysql_servers SET hostgroup_id=0, hostname="CHANGE_ME", port=3036 WHERE hostgroup_id=0;
+UPDATE mysql_servers SET hostgroup_id=0, hostname="ubits-test-xlearning-v2.cjqpovg6bsbu.us-east-1.rds.amazonaws.com", port=3036 WHERE hostgroup_id=0;
+LOAD MYSQL SERVERS TO RUNTIME;
+SAVE MYSQL SERVERS TO DISK;
+---fin proxysql

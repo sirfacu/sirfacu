@@ -1,0 +1,244 @@
+image:
+  name: 824404647578.dkr.ecr.us-east-1.amazonaws.com/ubits-dev-devops-ecs-ecr:node-20.388
+  aws:
+    access-key: $DEV_AWS_ACCESS_KEY_ID
+    secret-key: $DEV_AWS_SECRET_ACCESS_KEY
+
+definitions:
+  caches:
+    node-team: node_modules
+    node-squadpoc: node_modules
+    node-dev: node_modules
+    node-test: node_modules
+    node-prod: node_modules
+  
+  steps:
+    - step: &set-env
+        name: Configurar Credenciales AWS
+        clone:
+          enabled: false
+        script:
+          - set -a
+          - source set_env.sh
+          - ENVIRONMENT=${ENVIRONMENT//-/_}
+          - echo "AWS_ACCESS_KEY_ID=\${"${ENVIRONMENT^^}"_AWS_ACCESS_KEY_ID}" >> set_env.sh
+          - echo "AWS_SECRET_ACCESS_KEY=\${"${ENVIRONMENT^^}"_AWS_SECRET_ACCESS_KEY}" >> set_env.sh
+          - echo "AWS_DEFAULT_REGION=\${"${ENVIRONMENT^^}"_AWS_DEFAULT_REGION}" >> set_env.sh
+        artifacts:
+          - set_env.sh
+
+    - step: &clear-caches
+            name: Limpieza de Caché
+            script:
+              - export AWS_ACCESS_KEY_ID=${DEV_AWS_ACCESS_KEY_ID}
+              - export AWS_SECRET_ACCESS_KEY=${DEV_AWS_SECRET_ACCESS_KEY}
+              - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 824404647578.dkr.ecr.us-east-1.amazonaws.com
+              - pipe: docker://824404647578.dkr.ecr.us-east-1.amazonaws.com/ubits-dev-devops-fg-ecs-ecr:clear-caches-v6
+                variables:
+                  BITBUCKET_APP_KEY: $BITBUCKET_APP_KEY
+                  BITBUCKET_APP_SECRET: $BITBUCKET_APP_SECRET
+                  CACHES: ['node-${ENVIRONMENT//[-0-9]/}']
+            condition:
+              changesets:
+                includePaths:
+                  - 'package.json'
+    
+    - step: &cdk-execution
+        name: Ejecutando comando de CDK 
+        runs-on:
+          - 'self.hosted'
+          - 'linux'
+        script:
+          - set -a
+          - source set_env.sh
+          - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+          - export PS_NAME_CDK=${ENVIRONMENT,,}-${BITBUCKET_REPO_SLUG}-serverless
+          - export CDK_STACK_NAME=${PS_NAME_CDK}-CFStack
+          - npm install --location=global aws-cdk
+          - npm install
+          - cdk $COMMAND_DEPLOY --all --require-approval=never
+        artifacts:
+          - set_env.sh
+
+    - step: &security-scan
+        name: Escaneo de Seguridad
+        script:
+          - pipe: atlassian/git-secrets-scan:0.4.3
+            variables:
+              FILES: '**/*.txt **/*.json **/*.yml **/*.properties **/*.env'
+
+    - step: &check-branch-source
+        name: Validación permisos de despliegue
+        clone:
+          enabled: false
+        script:
+          - |
+            if [ $BITBUCKET_BRANCH != "master" ]; then
+              echo -e "Branch " ${CYAN} $BITBUCKET_BRANCH ${RESET} " no es master, " ${ROJO} "No esta permitido desplegar" ${RESET};
+              exit 1;
+            else
+              echo -e "Branch " ${CYAN} $BITBUCKET_BRANCH ${RESET} " es master," ${VERDE} "Despliegue posible" ${RESET};
+              exit 0;
+            fi
+
+pipelines:
+  default:
+    - step: 
+        name:  Configurando DEV para validar cambios
+        clone:
+            enabled: false
+        script:
+          - echo ENVIRONMENT=dev > set_env.sh
+          - echo "export COMMAND_DEPLOY=diff" >> set_env.sh
+        artifacts:
+            - set_env.sh
+    - step: *set-env
+    - step: *security-scan
+    - step: *clear-caches
+    - step: *cdk-execution
+
+  custom:
+    poc:
+      - step:
+          name: Configurando POC para validar cambios
+          clone:
+            enabled: false
+          script:
+             - echo ENVIRONMENT=$ENVIRONMENT >> set_env.sh
+             - echo "export COMMAND_DEPLOY=diff" >> set_env.sh
+          artifacts:
+              - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step: 
+          <<: *cdk-execution
+          name: Validacion de recursos en POC
+      - step: 
+          name: Configurando comando DEPLOY
+          script:
+            - echo export COMMAND_DEPLOY="deploy" >> set_env.sh
+          artifacts:
+              - set_env.sh
+      - step: 
+          <<: *cdk-execution
+      - step: *clear-caches
+      - step: *security-scan
+      - step:
+          <<: *cdk-execution
+          name:  Desplegando recursos en POC
+          deployment: poc
+          caches:
+            - node-squadpoc         
+    
+    team:
+      - variables:
+          - name: ENVIRONMENT
+            default: team-100
+            allowed-values:
+              - team-100
+              - team-101
+              - team-102
+              - team-103
+              - team-104
+              - team-105
+              - team-106
+              - team-107
+              - team-108
+              - team-109
+              - team-110
+              - team-111
+              - team-112
+      - step: 
+          name: Configurando variables de TEAM
+          clone:
+            enabled: false
+          script:
+             - echo ENVIRONMENT=$ENVIRONMENT >> set_env.sh
+             - echo "export COMMAND_DEPLOY=diff" >> set_env.sh
+          artifacts:
+              - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step: 
+          <<: *cdk-execution
+          name: Validacion de recursos en TEAM
+      - step: 
+          name: Configurando comando DEPLOY
+          script:
+            - echo export COMMAND_DEPLOY="deploy" >> set_env.sh
+          artifacts:
+              - set_env.sh
+      - step: 
+          <<: *cdk-execution
+          name: Desplegando recursos en TEAM
+          trigger: manual
+          caches:
+            - node-team  
+
+  branches:
+    develop:
+      - step:
+          name: Configurando variables de DEV
+          script:
+            - echo ENVIRONMENT=dev >> set_env.sh
+            - echo "export COMMAND_DEPLOY=deploy" >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step: 
+          <<: *cdk-execution
+          name: Desplegando recursos en DEV
+          trigger: manual
+          caches:
+            - node-dev 
+
+
+    staging:
+      - step:
+          name: Configurando variables de TEST
+          script:
+            - echo ENVIRONMENT=test >> set_env.sh
+            - echo "export COMMAND_DEPLOY=deploy" >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step: 
+          <<: *cdk-execution
+          name: Desplegando recursos en TEST
+          trigger: manual
+          caches:
+            - node-test 
+          
+    master:
+      - step: *check-branch-source
+      - step:
+          name: Configurando variables de PRODUCCION
+          script:
+            - echo ENVIRONMENT=prod >> set_env.sh
+            - echo "export COMMAND_DEPLOY=diff" >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *security-scan
+      - step: *clear-caches
+      - step: 
+          <<: *cdk-execution
+          name: Validacion de recursos en PRODUCCION
+      - step: 
+          name: Configurando comando DEPLOY
+          script:
+            - echo export COMMAND_DEPLOY="deploy" >> set_env.sh
+          artifacts:
+              - set_env.sh
+      - step: 
+          <<: *cdk-execution
+          name: Desplegando recursos en PRODUCCION
+          trigger: manual
+          caches:
+            - node-prod 

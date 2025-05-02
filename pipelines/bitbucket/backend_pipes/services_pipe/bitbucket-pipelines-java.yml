@@ -1,0 +1,402 @@
+image: atlassian/default-image:4
+
+definitions:
+  caches:
+    node-team: node_modules
+    node-squadpoc: node_modules
+    node-dev: node_modules
+    node-test: node_modules
+    node-prod: node_modules
+  steps:
+    - step: &set-env
+        name: Set Environments vars
+        clone:
+          enabled: false
+        script:
+          - set -a
+          - source set_env.sh
+          - echo $ENVIRONMENT
+          - ENVIRONMENT=${ENVIRONMENT//-/_}
+          - echo "VAR_APM=\${"${ENVIRONMENT^^}"_VAR_APM}" >> set_env.sh
+          - echo "AWS_ACCESS_KEY_ID=\${"${ENVIRONMENT^^}"_AWS_ACCESS_KEY_ID}" >> set_env.sh
+          - echo "AWS_SECRET_ACCESS_KEY=\${"${ENVIRONMENT^^}"_AWS_SECRET_ACCESS_KEY}" >> set_env.sh
+          - echo "AWS_DEFAULT_REGION=\${"${ENVIRONMENT^^}"_AWS_DEFAULT_REGION}" >> set_env.sh
+          - eval "echo ECR_URI=\$${ENVIRONMENT^^}_ACCOUNT_ID.dkr.ecr.\$${ENVIRONMENT^^}_AWS_DEFAULT_REGION.amazonaws.com >> set_env.sh"
+        artifacts:
+          - set_env.sh
+    
+    - step: &set-team-env
+        name: Set Team Environment
+        clone:
+            enabled: false
+        script:
+          - echo ECR=${TEAM_ECR} >> set_env.sh
+        artifacts:
+            - set_env.sh
+
+    - step: &set-dev-env
+        name: Set Dev Environment
+        clone:
+            enabled: false
+        script:
+          - echo ENVIRONMENT=dev >> set_env.sh
+          - echo ECR=${DEV_ECR} >> set_env.sh
+        artifacts:
+            - set_env.sh
+
+    - step: &set-test-env
+        name: Set Test Environment
+        clone:
+            enabled: false
+        script:
+          - echo ENVIRONMENT=test >> set_env.sh
+          - echo ECR=${TEST_ECR} >> set_env.sh
+        artifacts:
+            - set_env.sh
+
+    - step: &set-prod-env
+        name: Set Prod Environment
+        clone:
+            enabled: false
+        script:
+          - echo ENVIRONMENT=prod >> set_env.sh
+          - echo ECR=${PROD_ECR} >> set_env.sh
+        artifacts:
+            - set_env.sh
+
+    - step: &gradle-test-build
+        name: Build and Test
+        image: public.ecr.aws/docker/library/gradle:7.4.1-jdk11
+        runs-on:
+          - 'self.hosted'
+          - 'linux'
+        caches:
+          - gradle
+        script:
+          - gradle build
+
+    - step: &gradle-build-jar
+        name: Build and Test
+        image: public.ecr.aws/docker/library/gradle:7.4.1-jdk11
+        runs-on:
+          - 'self.hosted'
+          - 'linux'
+        caches:
+          - gradle
+        script:
+          - gradle build
+        artifacts:
+          - main/app-main/build/libs/**
+
+    - step: &get-version
+        name: Get New Version
+        services:
+          - docker
+        script:
+          - set -a
+          - source set_env.sh
+          - apt-get update && apt-get install jq git curl -y
+          - chmod +x ./pipe/pipe.sh
+          - ./pipe/pipe.sh
+        artifacts:
+          - set_env.sh
+
+    - step: &publish-sonarqube
+        name: Publish SonarQube
+        script:
+          - pipe: sonarsource/sonarqube-scan:1.1.0
+            variables:
+              SONAR_HOST_URL: ${SONAR_HOST_URL}
+              SONAR_TOKEN: ${SONAR_TOKEN}
+
+    - step: &build-push-image
+        name: Build and Push Image
+        services:
+          - docker
+        script:
+          - set -a
+          - source set_env.sh
+          - if [[ $ENV!=prod ]]; then export ARTIFACT_VERSION=${ARTIFACT_VERSION}${SUFFIX_NAME}; fi
+          - if [[ $ENV == prod ]]; then export ARTIFACT_VERSION=${ARTIFACT_VERSION}; fi
+          - TAG=${BITBUCKET_REPO_SLUG//[\/\\ ]/-}-${ARTIFACT_VERSION}
+          - echo TAG=$TAG >> set_env.sh
+          - echo $TAG
+          - |
+            if [ $VAR_APM == 'true' ]; then
+              sed -i 's/ENV JAVA_TOOL_OPTIONS "-XX:MaxRAMPercentage=90.0 -XX:+UseG1GC"/ENV JAVA_TOOL_OPTIONS "-javaagent:dd-java-agent.jar -XX:+UseG1GC -XX:MaxRAMPercentage=90.0"/' Dockerfile;
+              sed -i '/^EXPOSE/i \
+              \nADD '\''https://dtdg.co/latest-java-tracer'\'' dd-java-agent.jar \
+                ' Dockerfile;
+            fi
+          - docker build -f Dockerfile . -t $ECR
+          - cat Dockerfile
+          - docker images;
+          - pipe: atlassian/aws-ecr-push-image:1.5.0
+            variables:
+              AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+              AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+              IMAGE_NAME: $ECR
+              TAGS: "${TAG}"
+        artifacts:
+          - set_env.sh
+
+    - step: &deploy
+        name: Deploy
+        script:
+          - set -a
+          - source set_env.sh
+          - apt-get update && apt-get install jq -y
+          - TD_IMAGE_NAME=$ECR_URI/$ECR:$TAG
+          - TD_AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+          - for var in "${!TD_@}"; do eval "export ${var}=${!var//&/\\&}" >> env.sh; done
+          - |
+            task_definition_service=$(cat << EOF
+            {
+              "family": "${TD_SERVICE_NAME}",
+              "networkMode": "${TD_NETWORK_MODE}",
+              "containerDefinitions": [
+                {
+                  "name": "${TD_SERVICE_NAME}",
+                  "image": "${TD_IMAGE_NAME}",
+                  "cpu": ${TD_CPU},
+                  "memory": ${TD_MEMORY},
+                  "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                      "awslogs-group": "${TD_LOG_GROUP}",
+                      "awslogs-region": "${TD_AWS_DEFAULT_REGION}",
+                      "awslogs-stream-prefix": "${TD_SERVICE_NAME}"
+                    }
+                  },
+                  "portMappings": [
+                    {
+                      "containerPort":  ${TD_PORT},
+                      "hostPort":  ${TD_HOST_PORT},
+                      "protocol": "${TD_PROTOCOL}"
+                    }
+                  ],
+                  "essential": true,
+                  "environment": []
+                }
+              ],
+              "requiresCompatibilities": ["${TD_CLUSTER_COMPATIBILITY}"]
+            }
+            EOF
+            )
+            
+            task_definition_datadog=$(cat << EOF
+            {
+              "family": "${TD_SERVICE_NAME}",
+              "networkMode": "${TD_NETWORK_MODE}",
+              "containerDefinitions": [
+                {
+                  "name": "datadog-agent",
+                  "image": "datadog/agent:latest",
+                  "cpu": 125,
+                  "memory": 256,
+                  "essential": true,
+                  "environment": [
+                    {
+                      "name": "DD_API_KEY",
+                      "value": "${TD_DD_API_KEY}"
+                    },
+                    {
+                      "name": "DD_HOSTNAME",
+                      "value": "${TD_SERVICE_NAME}"
+                    }],
+                  "portMappings": [
+                    {
+                      "hostPort": 0,
+                      "protocol": "tcp",
+                      "containerPort": 8126
+                  }]
+                },
+                {
+                  "links": ["datadog-agent"],
+                  "name": "${TD_SERVICE_NAME}",
+                  "image": "${TD_IMAGE_NAME}",
+                  "cpu": ${TD_CPU},
+                  "memory": ${TD_MEMORY},
+                  "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                      "awslogs-group": "${TD_LOG_GROUP}",
+                      "awslogs-region": "${TD_AWS_DEFAULT_REGION}",
+                      "awslogs-stream-prefix": "${TD_SERVICE_NAME}_SERVICE"
+                    }
+                  },
+                  "portMappings": [
+                    {
+                      "containerPort":  ${TD_PORT},
+                      "hostPort":  ${TD_HOST_PORT},
+                      "protocol": "${TD_PROTOCOL}"
+                    }
+                  ],
+                  "essential": true,
+                  "environment": [],
+                  "dockerLabels": {
+                    "com.datadoghq.tags.env": "${ENV}",
+                    "com.datadoghq.tags.service": "${TD_SERVICE_NAME}",
+                    "com.datadoghq.tags.version": "1.0.0"
+                  }
+                }
+              ],
+              "requiresCompatibilities": ["${TD_CLUSTER_COMPATIBILITY}"]
+            }
+            EOF
+            )
+          - |
+            if [ $VAR_APM == 'true' ]; then
+              echo "$task_definition_datadog" >> taskDefinition.json
+              for var in "${!DD_@}"; do eval "echo ${var}=${!var//&/\\&}" >> env.sh; done
+            else
+              echo "$task_definition_service" >> taskDefinition.json
+            fi
+          - |
+            for var in "${!ENV_@}"; do eval "echo ${var}=${!var//&/\\&}" >> env.sh; done
+            echo \"environment\": $(cat env.sh | jq -R 'split("=") | {name: .[0], value: .[1:] | join("=")}' | jq -s '.') >> vars.sh
+            cat vars.sh
+            sed -i 's%\"environment\":\ \[\]%'"$(sed 's/[&/]/\\&/g' vars.sh)"'%g' taskDefinition.json
+          - for var in "${!TD_@}"; do sed -i "s%{$var}%${!var//&/\\&}%" "taskDefinition.json"; done
+          - cat taskDefinition.json
+          - eval "export CLUSTER_NAME=$CLUSTER_NAME"
+          - eval "export SERVICE_NAME=$TD_SERVICE_NAME"
+          - echo $SERVICE_NAME
+          - pipe: atlassian/aws-ecs-deploy:1.0.0
+            variables:
+              AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+              AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+              CLUSTER_NAME: $CLUSTER_NAME
+              SERVICE_NAME: $SERVICE_NAME
+              TASK_DEFINITION: 'taskDefinition.json'
+        artifacts:
+          - set_env.sh
+
+    - step: &tag-version
+        name: Tag Version Repository
+        script:
+          - set -a
+          - source set_env.sh
+          - git tag v${ARTIFACT_VERSION}
+          - git push --tags
+
+    - step: &validate-image-ecr
+        name: Validate image from ECR
+        services:
+          - docker
+        clone:
+          enabled: false
+        image: amazon/aws-cli
+        script:
+          - set -a
+          - source set_env.sh
+          - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI
+          - artifact_exist=$(aws ecr describe-images --repository-name=$ECR --image-ids=imageTag=$TAG 2>/dev/null || true)
+          - 'if [[ -z $artifact_exist ]]; then
+                echo "image $TAG not found in $ECR_URI/$ECR";
+                exit 1;
+            else
+                echo "image $TAG found in $ECR_URI/$ECR";
+            fi'
+
+    - step: &check-branch-source
+        name: Check branch source to deploy Prod
+        clone:
+          enabled: false
+        script:
+          - 'if [ $BITBUCKET_BRANCH != "master" ]; then
+            echo "Branch $BITBUCKET_BRANCH is not master, deploy not allowed";
+            exit 1;
+            else
+            echo "Branch $BITBUCKET_BRANCH is master, deploy allowed";
+            exit 0;
+            fi'
+
+pipelines:
+  custom:
+    poc:
+      - variables:
+          - name: ENVIRONMENT
+            default: squad-poc
+            allowed-values:
+              - squad-poc
+              - squad-poc1
+      - step: *set-team-env
+      - step: *set-env
+      - step: *gradle-build-jar
+      - step: *get-version
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to Poc
+          deployment: poc
+          trigger: manual
+    team:
+      - variables:
+          - name: ENVIRONMENT
+            default: team-112
+            allowed-values:
+              - team-100
+              - team-101
+              - team-102
+              - team-103
+              - team-104
+              - team-105
+              - team-106
+              - team-107
+              - team-108
+              - team-109
+              - team-110
+              - team-111
+              - team-112
+      - step: *set-team-env
+      - step: *set-env
+      - step: *gradle-build-jar
+      - step: *get-version
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to Poc
+          deployment: team
+          trigger: manual
+  default:
+#      - step: *get-token
+    - step: *gradle-test-build
+  branches:
+    develop:
+      - step: *set-dev-env
+      - step: *set-env
+      - step: *gradle-build-jar
+      - step: *get-version
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to Develop
+          deployment: dev
+          trigger: manual
+    staging:
+      - step: *set-test-env
+      - step: *set-env
+      - step: *gradle-build-jar
+      - step: *get-version
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to Test
+          deployment: test
+          trigger: manual
+    master:
+      - step: *check-branch-source
+      - step: *set-prod-env
+      - step: *set-env
+      - step: *gradle-build-jar
+      - step: *get-version
+      - step: *build-push-image
+      - step:
+          <<: *deploy
+          name: Deploy to Prod
+          deployment: prod
+          trigger: manual
+      - step: *tag-version

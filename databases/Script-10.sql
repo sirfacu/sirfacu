@@ -1,1 +1,0 @@
-select count(id) from adminhr.ubits_user uu 

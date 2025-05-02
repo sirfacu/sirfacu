@@ -1,0 +1,63 @@
+{
+  "family": "${TD_SERVICE_NAME}",
+  "networkMode": "${TD_NETWORK_MODE}",
+  "containerDefinitions": [
+    {
+      "name": "datadog-agent",
+      "image": "datadog/agent:latest",
+      "cpu": 10,
+      "memory": 256,
+      "essential": true,
+      "environment": [
+        {
+          "name": "DD_API_KEY",
+          "value": "${TD_DD_API_KEY}"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${TD_LOG_GROUP}",
+          "awslogs-region": "${TD_AWS_DEFAULT_REGION}",
+          "awslogs-stream-prefix": "${TD_SERVICE_NAME}-datadog-agent"
+        }
+      },
+      "portMappings": [
+        {
+          "hostPort": 0,
+          "protocol": "tcp",
+          "containerPort": 8126
+      }]
+    },
+    {
+      "links": ["datadog-agent"],
+      "name": "${TD_SERVICE_NAME}",
+      "image": "${TD_IMAGE_NAME}",
+      "cpu": ${TD_CPU},
+      "memory": ${TD_MEMORY},
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${TD_LOG_GROUP}",
+          "awslogs-region": "${TD_AWS_DEFAULT_REGION}",
+          "awslogs-stream-prefix": "${TD_SERVICE_NAME}-ecs-service"
+        }
+      },
+      "portMappings": [
+        {
+          "containerPort":  ${TD_PORT},
+          "hostPort":  ${TD_HOST_PORT},
+          "protocol": "${TD_PROTOCOL}"
+        }
+      ],
+      "essential": true,
+      "environment": [],
+      "dockerLabels": {
+        "com.datadoghq.tags.env": "${ENVIRONMENT}",
+        "com.datadoghq.tags.service": "${TD_SERVICE_NAME}",
+        "com.datadoghq.tags.version": "1.0.0"
+      }
+    }
+  ],
+  "requiresCompatibilities": ["${TD_CLUSTER_COMPATIBILITY}"]
+}

@@ -1,0 +1,79 @@
+image: atlassian/default-image:3
+
+definitions: 
+  steps:
+    - step: &set-env
+        name: Configurar Credenciales AWS
+        image: amazon/aws-cli
+        clone:
+            enabled: false
+        script:
+          - set -a
+          - echo $ENVIRONMENT
+          - ENVIRONMENT=${ENVIRONMENT//-/_}
+          - echo "AWS_ACCESS_KEY_ID=\${"${ENVIRONMENT^^}"_AWS_ACCESS_KEY_ID}" > set_env.sh
+          - echo "AWS_SECRET_ACCESS_KEY=\${"${ENVIRONMENT^^}"_AWS_SECRET_ACCESS_KEY}" >> set_env.sh
+          - echo "AWS_DEFAULT_REGION=\${"${ENVIRONMENT^^}"_AWS_DEFAULT_REGION}" >> set_env.sh
+          - echo "export REPO=\${"${ENVIRONMENT^^}"_ECR}" >> set_env.sh
+
+        artifacts:
+          - set_env.sh
+
+    - step: &build-push-image
+        name: Construcción de imagen y cargue a AWS
+        image: amazon/aws-cli
+        services:
+          - docker
+        script:
+          - set -a
+          - source set_env.sh
+          - export DOCKERFILE="Dockerfile"$IMAGE_NAME
+          - |
+            if [ "$IMAGE_NAME" = "Node" ]; then
+              sed -i "s/DOCKVERSION/${VERSION}/g" $DOCKERFILE
+              IMAGE_NAME=${IMAGE_NAME,,}-${VERSION}
+            else
+              IMAGE_NAME=${IMAGE_NAME,,}
+            fi
+          - echo -e $VERDE "Configuring image name to:$RESET" "$CYAN $IMAGE_NAME $RESET"
+          - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+          - echo -e $VERDE "Setting up version in the Dockerfile to :" $RESET $CYAN " to "$VERSION " "
+          - ECR_URI_NAME=$AWS_ACCOUNT_ID".dkr.ecr."$AWS_DEFAULT_REGION".amazonaws.com"
+          - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI_NAME/$REPO
+          - echo -e $VERDE "Configuring to:${RESET}" "$CYAN $IMAGE_NAME $RESET the BITBUCKET_BUILD_NUMBER:$ROJO $VERSION $RESET"
+          - echo -e $AMARILLO "building the image:${RESET}" "$CYAN $IMAGE_NAME.${BITBUCKET_BUILD_NUMBER} $RESET"
+          - docker build -f $DOCKERFILE -t $IMAGE_NAME.${BITBUCKET_BUILD_NUMBER} .
+          - docker tag $IMAGE_NAME.${BITBUCKET_BUILD_NUMBER} $ECR_URI_NAME/$REPO:$IMAGE_NAME.${BITBUCKET_BUILD_NUMBER}
+          - echo -e $AMARILLO "Publishing the image:${RESET}" "$CYAN ${IMAGE_NAME}:${BITBUCKET_BUILD_NUMBER} $RESET" "$CYAN TO:$REPO $RESET"
+          - docker push $ECR_URI_NAME/$REPO:$IMAGE_NAME.${BITBUCKET_BUILD_NUMBER}
+        artifacts:
+          - set_env.sh
+
+
+pipelines:
+  custom:
+    database-img:
+      - variables:
+          - name: IMAGE_NAME
+            allowed-values:
+              - Mongo
+              - Mysql
+              - Node
+              - Python
+              - Devops
+              - Devops2
+              - lms
+            default: Devops
+          - name: VERSION
+            default: "18" 
+          - name: ENVIRONMENT
+            allowed-values:
+              - poc
+              - dev
+              - test
+              - prod
+            default: dev
+      - step: 
+          <<: *set-env
+      - step: 
+          <<: *build-push-image

@@ -1,0 +1,215 @@
+image:
+  name: 824404647578.dkr.ecr.us-east-1.amazonaws.com/ubits-dev-devops-ecs-ecr:node-16-1
+  aws:
+    access-key: $DEV_AWS_ACCESS_KEY_ID
+    secret-key: $DEV_AWS_SECRET_ACCESS_KEY
+
+
+definitions:
+  steps:
+    - step: &set-env
+        name: Configurando variables ambiente
+        clone:
+          enabled: false
+        script:
+          - set -a
+          - source set_env.sh
+          - ENVIRONMENT=${ENVIRONMENT//-/_}
+          - echo "AWS_ACCESS_KEY_ID=\${"${ENVIRONMENT^^}"_AWS_ACCESS_KEY_ID}" >> set_env.sh
+          - echo "AWS_SECRET_ACCESS_KEY=\${"${ENVIRONMENT^^}"_AWS_SECRET_ACCESS_KEY}" >> set_env.sh
+          - echo "AWS_DEFAULT_REGION=\${"${ENVIRONMENT^^}"_AWS_DEFAULT_REGION}">> set_env.sh
+          - echo "AWS_ACCOUNT_ID=\${"${ENVIRONMENT^^}"_ACCOUNT_ID}" >> set_env.sh
+        artifacts:
+          - set_env.sh
+    
+    - step: &deploy
+        name: Despliegue de api gateway
+        script:
+          - set -a
+          - source set_env.sh
+          - echo -e "$CYAN Obteniendo secretos $RESET"
+          - export PS_NAME=${ENVIRONMENT}-${APP_NAME,,}-conf-apigw
+          - DATA_PARAMETER=$(aws ssm get-parameters --names "${PS_NAME}" --with-decryption --output json)
+          - |
+             resultado=$(echo $DATA_PARAMETER | jq '.InvalidParameters')
+             if [ "${#resultado}" -lt 3 ]; then 
+               echo -e "$CYAN Parameter store $RESET$ROJO"${PS_NAME}"$RESET$CYAN encontrado $RESET";
+               echo $DATA_PARAMETER | jq '.Parameters[0].Value' | sed 's/\\//g' | sed 's/\"{/{/g ; s/}\"/}/g' > parameter_store.json
+             else     
+               echo -e "$ROJO El Parameter esta vacio o no se encuentra :"${PS_NAME} "$RESET"; 
+               exit 1
+             fi
+          - formatted_json=$(cat parameter_store.json | jq -r 'to_entries[] | "\(.key)><\(.value)"')
+          - echo "$formatted_json" | while IFS= read -r line; do  echo "$line" >> keys_json ; done
+          - for var in "${!AWS_@}" "${!APP_@}"; do  echo "${var}><${!var}" >> keys_json;done
+          - |
+              sum=0
+              while IFS= read -r line
+                do
+                llave=$(echo "$line" | cut -d ">" -f 1)
+                numCoincidencias=$(grep -o "{$llave}" ${SWAGGER_PATH} | wc -l)
+                echo -e "$CYAN Coincidencias valor {$llave} son $RESET$ROJO" $numCoincidencias
+                sum=$((sum + numCoincidencias))
+              done < keys_json
+          - echo -e "$CYAN El total de coincidencias previo cambio es:$RESET$ROJO" $sum"$RESET"
+          - | 
+            while IFS= read -r line; do
+              key=$(echo "$line" | awk -F'><' '{print $1}')
+              value=$(echo "$line" | awk -F'><' '{print $2}')
+              value=$(sed 's/[\/&]/\\&/g' <<< "$value")
+              echo "Se reemplazara el valor {$key} por el valor $value" >> reemplazos
+              sed -i "s/{$key}/$value/g" ${SWAGGER_PATH}
+            done < keys_json     
+          - |
+              cambio=0
+              while IFS= read -r line
+                do
+                llave=$(echo "$line" | cut -d "<" -f 1)
+                numCoincidencias=$(grep -o "{$llave}" ${SWAGGER_PATH} | wc -l)
+                cambio=$((cambio + numCoincidencias))
+              done < keys_json
+              echo -e "$CYAN El total de coincidencias es: $RESET$ROJO" $cambio"$RESET"
+          - |
+            if [ "$cambio" -le 0 ] ; then
+              echo -e "$CYAN total de coincidencias sin reemplazar $RESET $ROJO" $cambio "$RESET" ;
+            else
+              echo -e "$ROJO  No se hizo el reemplazo correcto de variables, queda(n) $RESET$VERDE"$cambio"$RESET$ROJO por intercambiar favor validar $RESET ";
+              exit 1
+            fi
+          - cat ${SWAGGER_PATH} > swagger_file.json
+          - npm install --location=global aws-cdk
+          - npm install
+          - pip3 install -r requirements.txt --user
+          - cdk deploy --all --require-approval=never
+          
+        artifacts:
+          - set_env.sh
+          - swagger_file.json
+
+    - step: &check-branch-source
+        name: Validacion de despliegue en prod
+        clone:
+          enabled: false
+        script:
+          - 'if [ $BITBUCKET_BRANCH != "master" ]; then
+              echo "La rama de ejecución  $BITBUCKET_BRANCH no es master, el despliegue no esta permitido";
+              exit 1;
+            else
+              echo "La rama $BITBUCKET_BRANCH es correcta, despliegue permitido";
+              exit 0;
+            fi'
+
+    - step: &ssl-cert
+        name: Cargando información del certificado SSL
+        clone:
+          enabled: false
+        script: 
+        - set -a
+        - source set_env.sh
+        - |
+            if [ ${ENVIRONMENT} == "prod" ]; then
+              DOM="DOMAIN_$UNIT"
+              VAR_DOMAIN="${!DOM}"
+              export CDK_CERTIFICATE_ARN=$(aws acm list-certificates --query "CertificateSummaryList[?DomainName=='api.${VAR_DOMAIN}'].CertificateArn" --output text)
+            else
+              export CDK_CERTIFICATE_ARN=$(aws acm list-certificates --query "CertificateSummaryList[?DomainName=='api.$ENVIRONMENT.$DOMAIN_LOWER_ENV'].CertificateArn" --output text)
+            fi
+        - | 
+            if [ ${CDK_CERTIFICATE_ARN} == "x" ]; then
+              echo -e "$ROJO Certificado no encontrado"
+              exit 0;
+            else
+              echo -e "Certificado Encontrado :$CYAN" $CDK_CERTIFICATE_ARN"$RESET"
+              echo "CDK_CERTIFICATE_ARN="$CDK_CERTIFICATE_ARN >> set_env.sh
+            fi
+        
+        artifacts:
+          - set_env.sh
+ 
+pipelines:
+  custom:
+    poc:
+      - step:
+          name: Initializating Global variables
+          script:
+            - echo ENVIRONMENT=squad-poc >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *ssl-cert
+      - step:
+          <<: *deploy
+          name: Deploy to Poc
+          deployment: poc
+
+    team:
+      - variables:
+          - name: ENVIRONMENT
+            default: team-112
+            allowed-values:
+              - team-100
+              - team-101
+              - team-102
+              - team-103
+              - team-104
+              - team-105
+              - team-106
+              - team-107
+              - team-108
+              - team-109
+              - team-110
+              - team-111
+              - team-112
+      - step:
+          name: Initializating Global variables
+          script:
+            - echo ENVIRONMENT=$ENVIRONMENT >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *ssl-cert
+
+  branches:
+    develop:
+      - step:
+          name: Initializating Global variables
+          script:
+            - echo ENVIRONMENT=dev >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *ssl-cert
+      - step:
+          <<: *deploy
+          name: Deploy to Dev
+          deployment: dev
+          trigger: manual
+    staging:
+      - step:
+          name: Initializating Global variables
+          script:
+            - echo ENVIRONMENT=test >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *set-env
+      - step: *ssl-cert
+      - step:
+          <<: *deploy
+          name: Deploy to Test
+          deployment: test
+          trigger: manual
+    master:
+      - step:
+          name: Initializating Global variables
+          script:
+            - echo ENVIRONMENT=prod >> set_env.sh
+          artifacts:
+            - set_env.sh
+      - step: *check-branch-source
+      - step: *set-env
+      - step: *ssl-cert
+      - step:
+          <<: *deploy
+          name: Deploy to Prod
+          deployment: prod
+          trigger: manual

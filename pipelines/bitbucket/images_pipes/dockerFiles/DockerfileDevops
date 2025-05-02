@@ -1,0 +1,57 @@
+FROM ubuntu:22.04 AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    curl \
+    zip \
+    tar \
+    unzip \
+    gnupg2 \
+    ca-certificates
+
+
+RUN wget https://github.com/mozilla/sops/releases/download/v3.7.3/sops-v3.7.3.linux && \
+    chmod +x sops-v3.7.3.linux && \
+    mv sops-v3.7.3.linux /usr/local/bin/sops
+
+RUN apt-get purge -y gnupg2 ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+FROM ubuntu:22.04
+
+COPY --from=build /usr/local/bin/sops /usr/local/bin/sops
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    awscli \
+    netcat \
+    wget \
+    vim \
+    nano \
+    telnet \
+    curl \
+    gettext \
+    jq \
+    net-tools \
+    traceroute \
+    procps \
+    zip \
+    tar \
+    unzip 
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+CMD ["/bin/bash"]
+
+#ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+#AWS_DEFAULT_REGION=us-east-1
+#ECR_URI_NAME=$ACCOUNT_ID".dkr.ecr."$AWS_DEFAULT_REGION".amazonaws.com"
+#REPO=ubits-dev-devops-ecs-ecr 
+#TAG=v1.0.0
+#IMG_NAME=devops
+#aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI_NAME/$REPO
+#docker build -f DockerfileDevops . -t $IMG_NAME-$TAG
+#docker tag $IMG_NAME-$TAG $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG
+#docker images
+#docker push $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG

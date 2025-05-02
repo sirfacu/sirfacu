@@ -1,0 +1,7 @@
+# Use the official MongoDB image from Docker Hub
+FROM mongo:latest
+
+ENV MONGO_INITDB_ROOT_USERNAME=myuser
+ENV MONGO_INITDB_ROOT_PASSWORD=mypassword
+
+CMD ["mongod"]

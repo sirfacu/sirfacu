@@ -1,0 +1,42 @@
+FROM node:DOCKVERSION
+#FROM 824404647578.dkr.ecr.us-east-1.amazonaws.com/ubits-dev-devops-ecs-ecr:node-20
+
+RUN apt-get update
+RUN apt-get -y install curl unzip bash jq dos2unix python3 python3-pip 
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN ./aws/install
+#RUN python3 -m pip install boto3
+#RUN ln -s /usr/bin/python3 /usr/bin/python
+
+#FROM node:18
+#
+#RUN apt-get update
+#RUN apt-get -y install curl unzip bash jq dos2unix python3 python3-pip 
+#RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+#RUN unzip awscliv2.zip
+#RUN ./aws/install
+
+
+#FROM node:16
+#
+#RUN apt-get update
+#RUN apt-get -y install curl unzip bash jq dos2unix python3 unzip python3-pip 
+#RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+#RUN unzip awscliv2.zip
+#RUN ./aws/install
+#RUN python3 -m pip install boto3
+
+
+
+#ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+#AWS_DEFAULT_REGION=us-east-1
+#ECR_URI_NAME=$ACCOUNT_ID".dkr.ecr."$AWS_DEFAULT_REGION".amazonaws.com"
+#REPO=ubits-dev-devops-ecs-ecr 
+#TAG=22
+#IMG_NAME=node
+#aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI_NAME/$REPO
+#docker build -f DockerfileNode . -t $IMG_NAME-$TAG
+#docker tag $IMG_NAME-$TAG $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG
+#docker images
+#docker push $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG

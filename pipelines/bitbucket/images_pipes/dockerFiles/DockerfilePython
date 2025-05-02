@@ -1,0 +1,26 @@
+FROM python:latest
+
+RUN apt-get update
+RUN apt-get -y install curl unzip bash jq dos2unix python3 unzip python3-pip 
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN ./aws/install
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+RUN python3 -m pip install boto3
+RUN python -m ensurepip --upgrade
+RUN python -m pip install --upgrade pip virtualenv
+
+
+
+#ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+#AWS_DEFAULT_REGION=us-east-1
+#ECR_URI_NAME=$ACCOUNT_ID".dkr.ecr."$AWS_DEFAULT_REGION".amazonaws.com"
+#REPO=ubits-dev-devops-ecs-ecr 
+#TAG=3
+#IMG_NAME=python
+#aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI_NAME/$REPO
+#docker build -f DockerfileNode . -t $IMG_NAME-$TAG
+#docker tag $IMG_NAME-$TAG $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG
+#docker images
+#docker push $ECR_URI_NAME/$REPO:$IMG_NAME-$TAG

@@ -1,1 +1,0 @@
-alter user 'ubits_api_user' identified by 'squadpoc';
