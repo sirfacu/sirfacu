@@ -1,0 +1,160 @@
+name: CI-CD-legados-java-avicena-hc-app
+##V3 21/10/2024
+on: 
+  push:
+   branches:  [ master, desarrollo, qa, preproduccion, preproduccion_2, produccion ]
+
+jobs:
+  rama_master:
+  # Cuando se realicen cambios en Master, unicamente se realizará el respaldo del repositorio 
+    if: ${{ github.ref == 'refs/heads/master' }} 
+    runs-on:
+      group: respaldo  
+    steps:
+     - uses: actions/checkout@v4
+     - name: copia de respaldo
+       run: |
+         cd /devops/respaldo/
+         echo repository ${{ github.repository }}
+         echo workspace ${{ github.workspace }}
+         rm -rf ${{ github.repository }}
+         cd ${{ github.workspace }}
+         cp -r --remove-destination --force ${{ github.workspace }} /devops/respaldo/${{ github.repository_owner }}/
+         cd /devops/respaldo/
+         ls -la ${{ github.repository }}
+         echo "Finaliza respaldo"
+         
+  analisis_de_codigo:
+    if: ${{ github.ref == 'refs/heads/desarrollo' }}  
+    runs-on:
+      group: respaldo
+
+    steps:
+     - uses: actions/checkout@v4
+     
+     - name: Nombre repositorio
+       run: |
+         line=${{ github.repository }} && let pos=$(expr index "${line:1}" /)+1 && linea=${line:$pos} && echo $linea && echo "repositorio=$linea" >> "$GITHUB_ENV"
+         
+    # Realiza el analisis de codigo
+     - name: Analisis de codigo
+       run: |
+         pwd
+         /devops/sonarqube/bin/sonar-scanner/bin/sonar-scanner -X -Dsonar.projectKey=${{ github.repository_owner }}_${{ env.repositorio }}_${{ github.ref_name }} -Dsonar.sources=. -Dsonar.host.url=http://10.160.6.47:8082 -Dsonar.java.binaries=. -Dsonar.login=squ_2a06685be35351f42a8916ad1baf49565a3b6241
+  
+  rama_desarrollo:
+    if: ${{ github.ref == 'refs/heads/desarrollo' }}
+    environment:
+        name: autorizacion_desarrollo
+    runs-on:
+      group: linux1 
+      
+    steps:
+     - uses: actions/checkout@v4
+    
+     - name: Ejecuta el script de compilacion 
+       run: |
+          bash /devops/deploy/shell/keraltyco/avicena-hc-app/compilacion_avicena-hc-app.sh
+
+      # se sube el artefacto compilado a nexus
+     - name: cargar en NEXUS 
+       run: |
+         mkdir compilado
+         bash /devops/deploy/shell/keraltyco/avicena-hc-app/nexus-legados-avicena-hc-app.sh ${{ github.ref_name }} ${{ github.run_number }}
+         
+     - name: Ejecuta el script de despliegue 
+       run: |
+          pwd
+          bash /devops/deploy/shell/keraltyco/avicena-hc-app/deploy_desarrollo-avicena-hc-app.sh ${{ github.run_number }}
+
+  rama_preproduccion_2:
+    if: ${{ github.ref == 'refs/heads/preproduccion_2' }}
+    environment:
+        name: autorizacion_preproduccion
+    runs-on:
+      group: linux1 
+      
+    steps:
+     - uses: actions/checkout@v4
+    
+     - name: Ejecuta el script de compilacion 
+       run: |
+          bash /devops/deploy/shell/keraltyco/avicena-hc-app/compilacion_avicena-hc-app.sh
+
+      # se sube el artefacto compilado a nexus
+     - name: cargar en NEXUS 
+       run: |
+         mkdir compilado
+         bash /devops/deploy/shell/keraltyco/avicena-hc-app/nexus-legados-avicena-hc-app.sh ${{ github.ref_name }} ${{ github.run_number }}
+         
+     - name: Ejecuta el script de despliegue 
+       run: |
+          pwd
+          bash /devops/deploy/shell/keraltyco/avicena-hc-app/deploy_preproduccion-avicena-hc-app.sh ${{ github.run_number }}
+          
+  rama_produccion:
+    if: ${{ github.ref == 'refs/heads/produccion' }}
+    environment:
+        name: autorizacion_compila_produccion
+    runs-on:
+      group: linux1 
+      
+    steps:
+     - uses: actions/checkout@v4
+    
+     - name: Ejecuta el script de compilacion 
+       run: |
+          bash /devops/deploy/shell/keraltyco/avicena-hc-app/compilacion_avicena-hc-app.sh
+
+      # se sube el artefacto compilado a nexus
+     - name: cargar en NEXUS 
+       run: |
+         mkdir compilado
+         bash /devops/deploy/shell/keraltyco/avicena-hc-app/nexus-legados-avicena-hc-app.sh ${{ github.ref_name }} ${{ github.run_number }}
+
+     - name: Upload artifact
+       uses: actions/upload-artifact@v4
+       with:
+         name: artefactos
+         path: ${{ github.workspace }}/compilado/**
+         if-no-files-found: error
+         retention-days: 5
+
+  CI_CD_produccion_server1:
+    needs: rama_produccion
+    environment:
+      name: autorizacion_operaciones_produccion1
+    runs-on:
+      group: Operaciones
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: artefactos
+          path: descarga
+
+      - name: Test de Artefacto descargado
+        run: |
+          cd ${{ github.workspace }}/descarga
+          ls -la
+          
+      - name: Ejecuta despliegue en produccion 
+        run: |
+           pwd
+           bash /devops/deploy/shell/Avicena/deploy_pro_Avicena_App.sh ${{ github.run_number }}
+                             
+  CI_CD_produccion_server2:
+    needs: CI_CD_produccion_server1
+    environment:
+      name: autorizacion_operaciones_produccion2
+    runs-on:
+      group: Operaciones
+
+    steps:
+      - name: Ejecuta despliegue en produccion demas servidores
+        run: |
+           pwd
+           bash /devops/deploy/shell/Avicena/deploy_pro1_Avicena_App.sh ${{ github.run_number }}

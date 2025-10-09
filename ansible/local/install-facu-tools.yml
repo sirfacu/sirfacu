@@ -1,0 +1,212 @@
+---
+- name: Instalar herramientas para sirfacu
+  hosts: localhost
+  become: true
+  vars:
+    usuario: sirfacu
+    home_dir: "/home/sirfacu"
+    tmp_dir: "/tmp/facu-tools"
+
+  tasks:
+
+    - name: Crear carpeta temporal para descargas
+      file:
+        path: "{{ tmp_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Instalar dependencias base
+      apt:
+        name:
+          - curl
+          - unzip
+          - gnupg
+          - software-properties-common
+          - ca-certificates
+          - lsb-release
+          - gettext
+          - python3
+          - python3-pip
+          - gdebi-core
+        state: present
+        update_cache: yes
+
+    - name: Permitir sudo sin contraseña para {{ usuario }}
+      copy:
+        dest: "/etc/sudoers.d/{{ usuario }}"
+        content: "{{ usuario }} ALL=(ALL) NOPASSWD:ALL\n"
+        mode: '0440'
+
+    - name: Instalar Terminator
+      apt:
+        name: terminator
+        state: present
+
+    - name: Verificar si DBeaver está instalado
+      command: dbeaver -version
+      register: dbeaver_installed
+      ignore_errors: yes
+
+    - name: Instalar DBeaver si no está instalado
+      shell: |
+        curl -L -o {{ tmp_dir }}/dbeaver.deb https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb
+        gdebi -n {{ tmp_dir }}/dbeaver.deb
+      when: dbeaver_installed.rc != 0
+
+    - name: Verificar si AWS VPN Client está instalado
+      stat:
+        path: /opt/aws-vpn-client
+      register: vpn_installed
+
+    #- name: Instalar AWS VPN Client si no está instalado
+    #  shell: |
+    #    curl -L -o {{ tmp_dir }}/aws-vpn-client.deb https://d3gcli72yxqn2z.cloudfront.net/prod/1.0.7/Ubuntu/aws-vpn-client-1.0.7-1_amd64.deb
+    #    gdebi -n {{ tmp_dir }}/aws-vpn-client.deb
+    #  when: not vpn_installed.stat.exists
+
+    - name: Verificar si Leapp está instalado
+      stat:
+        path: /opt/leapp
+      register: leapp_installed
+
+    - name: Instalar Leapp si no está instalado
+      shell: |
+        curl -L -o {{ tmp_dir }}/leapp.AppImage https://asset.noovolari.com/latest/Leapp-appImage.zip
+        chmod +x {{ tmp_dir }}/leapp.AppImage
+        mv {{ tmp_dir }}/leapp.AppImage /usr/local/bin/leapp
+      when: not leapp_installed.stat.exists
+
+    - name: Verificar si Docker está instalado
+      command: docker --version
+      register: docker_installed
+      ignore_errors: yes
+
+    - name: Instalar Docker si no está instalado
+      shell: |
+        curl -fsSL https://get.docker.com | bash
+      when: docker_installed.rc != 0
+
+    - name: Verificar si kubectl está instalado
+      command: kubectl version --client=true --short
+      register: kubectl_installed
+      ignore_errors: yes
+
+    - name: Instalar kubectl si no está instalado
+      shell: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+        rm kubectl
+      when: kubectl_installed.rc != 0
+
+    - name: Verificar si Terraform está instalado
+      command: terraform -version
+      register: terraform_installed
+      ignore_errors: yes
+
+    - name: Instalar Terraform si no está instalado
+      shell: |
+        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+        sudo apt update
+        sudo apt install terraform -y
+      when: terraform_installed.rc != 0
+
+    - name: Verificar si AWS CLI está instalado
+      command: aws --version
+      register: aws_installed
+      ignore_errors: yes
+
+    #- name: Instalar AWS CLI v2 si no está instalado
+    #  shell: |
+    #    curl https://d20adtppz83p9s.cloudfront.net/GTK/latest/awsvpnclient_amd64.deb -o awscliv2.zip
+    #    unzip awscliv2.zip
+    #    ./aws/install
+    #    rm -rf aws awscliv2.zip
+    #  when: aws_installed.rc != 0
+
+    - name: Verificar si Pulumi está instalado
+      command: pulumi version
+      register: pulumi_installed
+      ignore_errors: yes
+
+    - name: Instalar Pulumi si no está instalado
+      shell: |
+          curl -fsSL https://get.pulumi.com > install-pulumi.sh
+          chmod +x install-pulumi.sh
+          ./install-pulumi.sh --version 3.105.0
+      when: pulumi_installed.rc != 0
+    
+    - name: Habilitando comando pulumi global
+      ansible.builtin.file:
+        src: "{{ home_dir }}/.pulumi/bin/pulumi" 
+        dest: /usr/bin/pulumi
+        state: link
+
+    - name: Verificar si nvm está instalado
+      stat:
+        path: "{{ home_dir }}/.nvm/nvm.sh"
+      register: nvm_installed
+
+    - name: Instalar NVM + Node.js LTS si no está instalado
+      become: false
+      shell: |
+        export NVM_DIR="$HOME/.nvm"
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        nvm install --lts
+      when: not nvm_installed.stat.exists
+
+    - name: Verificar si sops está instalado
+      command: sops --version
+      register: sops_installed
+      ignore_errors: yes
+
+    - name: Instalar sops si no está instalado
+      shell: |
+        curl -L -o /usr/local/bin/sops https://github.com/mozilla/sops/releases/latest/download/sops-linux-amd64
+        chmod +x /usr/local/bin/sops
+      when: sops_installed.rc != 0
+
+    - name: Verificar si mongosh está instalado
+      command: mongosh --version
+      register: mongosh_installed
+      ignore_errors: yes
+
+    - name: Instalar mongosh si no está instalado
+      shell: |
+        wget -qO- https://www.mongodb.org/static/pgp/server-8.0.asc | sudo tee /etc/apt/trusted.gpg.d/server-8.0.asc
+        echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+        apt update && apt install -y mongodb-mongosh
+      when: mongosh_installed.rc != 0
+
+    - name: Verificar si minikube está instalado
+      command: minikube version
+      register: minikube_installed
+      ignore_errors: yes
+
+    - name: Instalar minikube si no está instalado
+      shell: |
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        install minikube-linux-amd64 /usr/local/bin/minikube
+        rm minikube-linux-amd64
+      when: minikube_installed.rc != 0
+
+    - name: Copiar .bashrc personalizado
+      copy:
+        src: "template.bashrc"
+        dest: "{{ home_dir }}/.bashrc"
+        owner: "{{ usuario }}"
+        group: "{{ usuario }}"
+        mode: '0644'
+    
+    - name: Añadir usuario a grupos necesarios
+      user:
+        name: "{{ usuario }}"
+        groups: sudo,docker,libvirt
+        append: yes
+
+    - name: Limpiar carpeta temporal
+      file:
+        path: "{{ tmp_dir }}"
+        state: absent

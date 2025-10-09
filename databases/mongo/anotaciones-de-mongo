@@ -246,6 +246,17 @@ db.grantRolesToUser("user_emr_analitica", [
 ]);
 
 
+db.createUser({
+  user: "user_learn_map_sync",
+  pwd: "Mn4QkogZY+jgLn", 
+  roles: [
+    { role: "readWrite", db: "Learning_map" } 
+  ],
+  mechanisms: ["SCRAM-SHA-1"]
+});
+
+
+db.changeUserPassword("user_learn_map_sync", "Mn4QkogZY+jgLn")
 #### lectura de la salida de: db.Progress.stats().
 
 ## Campo	                          Significado
@@ -333,7 +344,6 @@ done
 
 ---- eliminar DB
 db.getSiblingDB("lms_logs").dropDatabase()
-
 
 
 

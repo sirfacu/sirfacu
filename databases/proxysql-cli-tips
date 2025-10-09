@@ -1,4 +1,8 @@
 ---incio proxysql
+
+-- # proxysql se basa en
+
+
 UPDATE mysql_servers SET hostname="test-upgrade-db-cluster.cluster-cjqpovg6bsbu.us-east-1.rds.amazonaws.com", port=3306 WHERE hostgroup_id=0;
 UPDATE mysql_servers SET hostname="test-upgrade-db-cluster.cluster-cjqpovg6bsbu.us-east-1.rds.amazonaws.com", port=3306 , hostgroup_id=0 WHERE hostgroup_id=1;
 LOAD MYSQL SERVERS TO RUNTIME;

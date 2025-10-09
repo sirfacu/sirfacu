@@ -31,4 +31,17 @@ done
 
 cd $TMP_FOLDER
 
-db= db.getSiblingDB("lxp_strapi_cms"); db.createUser({user: "lxp-test",pwd: "t3MP0R4lpWD",roles: [{ role: "readWrite", db: "lxp_strapi_cms"}]);
+db= db.getSiblingDB("admin"); db.createUser({user: "user_lms_creator",pwd: "P6Fw9I5yU9QG",roles: [{ role: "readWrite", db: "lms_logs"}]);
+db= db.getSiblingDB("admin"); db.createUser({user: "user_notifications_manager",pwd: "P5Jhj13j11Xe",roles: [{ role: "readWrite", db: "notifications_manage"}]);
+
+
+mongosh --host $MONGO_HOST:$MONGO_PORT --username $MONGO_USER -p $MONGO_PWD --authenticationDatabase admin 
+
+export MONGO_PORT=27017
+export MONGO_HOST="lms-docdb.rds.test.sandteck.com"
+export MONGO_USER=ubitsadmin
+export MONGO_PWD="SEC_STUDENT_METRICS_PWD"
+
+
+ubitsadmin
+

@@ -1,0 +1,32 @@
+{
+  "family": "${TD_SERVICE_NAME}",
+  "networkMode": "${TD_NETWORK_MODE}",
+  "cpu": "${TD_SERVICE_CPU}",
+  "memory": "${TD_SERVICE_MEMORY}",
+  "taskRoleArn": "arn:aws:iam::${ENV_AWS_ACCOUNT_ID}:role/${TD_SERVICE_NAME}-task-role",
+  "executionRoleArn": "arn:aws:iam::${ENV_AWS_ACCOUNT_ID}:role/${TD_SERVICE_NAME}-exec-role",
+  "requiresCompatibilities": ["${TD_CLUSTER_COMPATIBILITY}"],
+  "containerDefinitions": [
+    {
+      "name": "${TD_SERVICE_NAME}",
+      "image": "${TD_IMAGE_NAME}",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${ENVIRONMENT}-${APP_NAME}-log",
+          "awslogs-region": "${AWS_DEFAULT_REGION}",
+          "awslogs-stream-prefix": "${TD_SERVICE_NAME}"
+        }
+      },
+      "portMappings": [
+        {
+          "containerPort": ${TD_PORT},
+          "hostPort": ${TD_HOST_PORT},
+          "protocol": "${TD_PROTOCOL}"
+        }
+      ],
+      "essential": true,
+      "environment": []
+    }
+  ]
+}

@@ -7,7 +7,7 @@ pulumi login
 
 # Nombre del stack(ambiente/workspace) es como el del ambiente
 
-# El pulumi.squad-env.yaml --> definie credenciales de configuraciones para correr el stack en el ambiente
+# El pulumi.squad-env.yaml --> define credenciales de configuraciones para correr el stack en el ambiente
 
 # La sección environments el lo pone variables de ambiente para ejecutar el tiene las credenciales
 
@@ -20,6 +20,6 @@ pulumi stack select nombre_stack
 
 pulumi stack rm nombre_stack
 
-# para cuando son parameter store pararse en la raiz del repo ejecutar el make envi.env-vars
+# para cuando son parameter store pararse en la raiz del repo ejecutar el make env.env-vars
 
 

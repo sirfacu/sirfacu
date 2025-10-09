@@ -1,0 +1,138 @@
+image:
+  name: 
+  aws:
+    access-key: $DEV_AWS_ACCESS_KEY_ID
+    secret-key: $DEV_AWS_SECRET_ACCESS_KEY
+
+definitions: 
+  steps:
+    - step: &validate-vars
+        name: "Validar variables requeridas"
+        script:
+          - |
+            REQUIRED_VARS=("DB_USER" "PWD_HASH")
+            for VAR in "${REQUIRED_VARS[@]}"; do
+              if [[ -z "${!VAR}" ]]; then
+                echo "❌ ERROR: La variable $VAR no está definida. Por favor, configúrala en el Pipeline."
+                exit 1
+              fi
+            done
+
+    - step: &set-env
+        name: Configurando Entorno
+        clone:
+            enabled: false
+        script:
+          - echo "eval ARTIFACTS_BUCKET="${ENVIRONMENT}"-artifacts-deployments" >> set_env.sh
+          - echo "eval APPLICATION_NAME="${ENVIRONMENT}"-proxysql-app" >> set_env.sh
+          - echo "eval DEPLOYMENT_GROUP="${ENVIRONMENT}"-proxysql-deploy-group" >> set_env.sh
+          - ENVIRONMENT=${ENVIRONMENT//-/_}
+          - echo "eval AWS_ACCESS_KEY_ID=\${"${ENVIRONMENT^^}"_AWS_ACCESS_KEY_ID}" >> set_env.sh
+          - echo "eval AWS_SECRET_ACCESS_KEY=\${"${ENVIRONMENT^^}"_AWS_SECRET_ACCESS_KEY}" >> set_env.sh
+          - echo "eval AWS_DEFAULT_REGION=\${"${ENVIRONMENT^^}"_AWS_DEFAULT_REGION}" >> set_env.sh
+          
+        artifacts:
+            - set_env.sh
+    
+    - step: &create-user
+        name: Creacion usuario
+        script:
+          - set -a
+          - source set_env.sh
+          - PARAM_NAME=${ENVIRONMENT}-conf-proxysql
+          - DATA_PS=$(aws ssm get-parameter --name "$PARAM_NAME" --region "$AWS_DEFAULT_REGION" --with-decryption --query 'Parameter.Value' --output text)
+          - USER_EXISTS=$(echo "$DATA_PS" | grep -q "$DB_USER" && echo "true" || echo "false")
+          - |
+            if [ "$USER_EXISTS" = "true" ]; then
+                echo -e "${CYAN}El usuario${RESET}${ROJO} $DB_USER ${RESET}${CYAN}ya existe en mysql_users. Se actualizará la clave${RESET} en el ambiente "${ENVIRONMENT}
+            else
+                echo -e "${CYAN}El usuario ${RESET}${VERDE}${DB_USER}${RESET}${CYAN} No existe, se creará${RESET} en el ambiente "${ENVIRONMENT}
+            fi
+          - |
+            UPDATED_DATA_PS=$(echo "$DATA_PS" | jq --arg db_user "$DB_USER" --arg pwd_hash "$PWD_HASH" '.mysql_users += {($db_user): $pwd_hash}')
+            aws ssm put-parameter \
+              --name "$PARAM_NAME" \
+              --value "$UPDATED_DATA_PS" \
+              --type "SecureString" \
+              --region "$AWS_DEFAULT_REGION" \
+              --overwrite
+          - mkdir dist
+          - zip -rq dist/${BITBUCKET_REPO_SLUG}-${BITBUCKET_BRANCH//[\/\\ ]/-}-${BITBUCKET_BUILD_NUMBER}-proxysql.zip -@ < artifact.list
+        artifacts:
+            - dist/*.zip             
+
+    - step: &uploading-config
+        name: Subiendo configuración a codeploy
+        clone:
+            enabled: false
+        script:
+          - set -a
+          - source set_env.sh
+          - echo -e "${CYAN} Se generará el despliegue hacia el bucket "$ARTIFACTS_BUCKET"${RESET}"
+          - pipe: atlassian/aws-code-deploy:1.1.1
+            variables:
+              AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+              AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+              APPLICATION_NAME: $APPLICATION_NAME
+              ZIP_FILE: 'dist/${BITBUCKET_REPO_SLUG}-${BITBUCKET_BRANCH//[\/\\ ]/-}-${BITBUCKET_BUILD_NUMBER}-proxysql.zip'
+              COMMAND: 'upload'
+              S3_BUCKET: $ARTIFACTS_BUCKET
+              WAIT: 'true'
+              VERSION_LABEL: '${BITBUCKET_REPO_SLUG}-${BITBUCKET_BRANCH//[\/\\ ]/-}-${BITBUCKET_BUILD_NUMBER}'
+              IGNORE_APPLICATION_STOP_FAILURES: 'true'
+              FILE_EXISTS_BEHAVIOR: 'OVERWRITE'
+
+    - step: &deploy-configuration
+        name: Desplegando cambios en la configuración
+        clone:
+            enabled: false
+        script:
+          - source set_env.sh
+          - echo -e "${CYAN} Realizando despliegue de configuración en ambiente ${RESET}${ROJO}"$ENVIRONMENT${RESET}
+          - pipe: atlassian/aws-code-deploy:1.1.1
+            variables:
+              AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+              AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+              APPLICATION_NAME: $APPLICATION_NAME
+              DEPLOYMENT_GROUP: $DEPLOYMENT_GROUP
+              S3_BUCKET: $ARTIFACTS_BUCKET
+              COMMAND: 'deploy'
+              WAIT: 'true'
+              VERSION_LABEL: '${BITBUCKET_REPO_SLUG}-${BITBUCKET_BRANCH//[\/\\ ]/-}-${BITBUCKET_BUILD_NUMBER}'
+              IGNORE_APPLICATION_STOP_FAILURES: 'true'
+              FILE_EXISTS_BEHAVIOR: 'OVERWRITE'
+            
+
+pipelines:
+  custom:
+    crear-usuario:
+      - variables:
+          - name: DB_USER
+          - name: PWD_HASH
+          - name: ENVIRONMENT
+            default: dev
+            allowed-values:
+              - dev
+              - squad-poc
+              - test
+              - team-100
+              - team-101
+              - team-102
+              - team-103
+              - team-104
+              - team-105
+              - team-106
+              - team-107
+              - team-108
+              - team-109
+              - team-110
+              - team-111
+              - team-112
+              - prod
+      - step: *validate-vars
+      - step: *set-env
+      - step: *create-user
+      - step: *uploading-config
+      - step: *deploy-configuration

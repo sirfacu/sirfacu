@@ -1,0 +1,4 @@
+name: parameter-store
+runtime:
+  name: nodejs
+description: Create Parameter Store with encrypted values

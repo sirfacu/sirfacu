@@ -1,0 +1,87 @@
+{
+  "family": "${TD_SERVICE_NAME}",
+  "networkMode": "${TD_NETWORK_MODE}",
+  "cpu": "${TD_CPU}",
+  "memory": "${TD_MEMORY}",
+  "taskRoleArn": "arn:aws:iam::${ENV_AWS_ACCOUNT_ID}:role/${TD_SERVICE_NAME}-task-role",
+  "executionRoleArn": "arn:aws:iam::${ENV_AWS_ACCOUNT_ID}:role/${TD_SERVICE_NAME}-exec-role",
+  "containerDefinitions": [
+    {
+      "name": "datadog-agent",
+      "image": "datadog/agent:latest",
+      "cpu": ${DD_CPU},
+      "memory": ${DD_MEMORY},
+      "essential": true,
+      "environment": [
+        {
+          "name": "DD_AGENT_HOST",
+          "value": "datadog-agent"
+        },
+        {
+          "name": "DD_ENV",
+          "value": "${ENVIRONMENT}"
+        },
+        {
+          "name": "DD_LOGS_INJECTION",
+          "value": "true"
+        },
+        {
+          "name": "DD_SERVICE",
+          "value": "${ENVIRONMENT}-${APP_NAME}"
+        },
+        {
+          "name": "DD_VERSION",
+          "value": "1.0.0"
+        },
+        {
+          "name": "DD_API_KEY",
+          "value": "${DATADOG_API_KEY}"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${ENVIRONMENT}-${APP_NAME}-log",
+          "awslogs-region": "${AWS_DEFAULT_REGION}",
+          "awslogs-stream-prefix": "${TD_SERVICE_NAME}-datadog-agent"
+        }
+      },
+      "portMappings": [
+        {
+          "hostPort": ${DD_HOST_PORT},
+          "protocol": "tcp",
+          "containerPort": 8126
+      }]
+    },
+    {
+      "name": "${TD_SERVICE_NAME}",
+      "image": "${TD_IMAGE_NAME}",
+      "cpu": ${TD_SERVICE_CPU},
+      "memory": ${TD_SERVICE_MEMORY},
+      "links": ["datadog-agent"],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${ENVIRONMENT}-${APP_NAME}-log",
+          "awslogs-region": "${AWS_DEFAULT_REGION}",
+          "awslogs-stream-prefix": "${TD_SERVICE_NAME}-ecs-service"
+        }
+      },
+      "portMappings": [
+        {
+          "containerPort": ${TD_PORT},
+          "hostPort":  ${TD_HOST_PORT},
+          "protocol": "TCP"
+        }
+      ],
+      "essential": true,
+      "environment": [],
+      "dockerLabels": {
+        "com.datadoghq.tags.env": "${ENVIRONMENT}",
+        "com.datadoghq.tags.service": "${TD_SERVICE_NAME}",
+        "com.datadoghq.tags.version": "1.0.0"
+      }
+    }
+  ],
+  "requiresCompatibilities": ["${TD_CLUSTER_COMPATIBILITY}"]
+}
